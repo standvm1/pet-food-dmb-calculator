@@ -10,6 +10,9 @@ import CatProtein from './pages/CatProtein';
 import LowFatDog from './pages/LowFatDog';
 import KidneyDiet from './pages/KidneyDiet';
 import PuppyNutrition from './pages/PuppyNutrition';
+import FeedingCalculatorPage from './pages/FeedingCalculatorPage';
+import WeightLossCalculatorPage from './pages/WeightLossCalculatorPage';
+import WeightGainCalculatorPage from './pages/WeightGainCalculatorPage';
 
 export default function App() {
   return (
@@ -27,6 +30,9 @@ export default function App() {
               <Route path="/low-fat-dog" element={<LowFatDog />} />
               <Route path="/kidney-diet" element={<KidneyDiet />} />
               <Route path="/puppy-nutrition" element={<PuppyNutrition />} />
+              <Route path="/feeding-calculator" element={<FeedingCalculatorPage />} />
+              <Route path="/weight-loss-calculator" element={<WeightLossCalculatorPage />} />
+              <Route path="/weight-gain-calculator" element={<WeightGainCalculatorPage />} />
             </Routes>
           </main>
           <Footer />

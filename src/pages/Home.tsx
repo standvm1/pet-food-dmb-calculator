@@ -89,6 +89,22 @@ export default function Home() {
           </p>
         </div>
 
+        {/* Feeding calculator cards */}
+        <div className="grid sm:grid-cols-3 gap-4">
+          {[
+            { to: '/feeding-calculator', emoji: '🍽️', title: 'How Much Should I Feed?', desc: 'Get a personalized daily portion based on your pet\'s weight and body condition.', color: 'border-teal-200 hover:border-teal-400 hover:bg-teal-50' },
+            { to: '/weight-loss-calculator', emoji: '📉', title: 'Weight Loss Calculator', desc: 'Safe feeding plan for overweight pets — includes a timeline to reach ideal weight.', color: 'border-amber-200 hover:border-amber-400 hover:bg-amber-50' },
+            { to: '/weight-gain-calculator', emoji: '📈', title: 'Weight Gain Calculator', desc: 'Help underweight pets reach a healthy body condition safely and gradually.', color: 'border-blue-200 hover:border-blue-400 hover:bg-blue-50' },
+          ].map(card => (
+            <Link key={card.to} to={card.to}
+              className={`bg-white rounded-2xl border-2 p-5 transition-all group ${card.color}`}>
+              <div className="text-3xl mb-3">{card.emoji}</div>
+              <h3 className="font-bold text-gray-900 text-sm mb-1.5 group-hover:text-teal-700 transition-colors">{card.title}</h3>
+              <p className="text-xs text-gray-500 leading-relaxed">{card.desc}</p>
+            </Link>
+          ))}
+        </div>
+
         {/* Quick example */}
         <FoodComparisonExample />
 

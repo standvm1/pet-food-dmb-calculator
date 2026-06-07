@@ -2,6 +2,12 @@ import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, BookOpen, ChevronDown } from 'lucide-react';
 
+const calcLinks = [
+  { to: '/feeding-calculator', label: '🍽️ How Much Should I Feed?', desc: 'General daily feeding amounts' },
+  { to: '/weight-loss-calculator', label: '📉 Weight Loss Calculator', desc: 'Safe plan for overweight pets' },
+  { to: '/weight-gain-calculator', label: '📈 Weight Gain Calculator', desc: 'Help underweight pets safely' },
+];
+
 const learnLinks = [
   { to: '/what-is-dmb', label: 'What is Dry Matter Basis?' },
   { to: '/how-to-compare', label: 'How to Compare Foods' },
@@ -13,6 +19,7 @@ const learnLinks = [
 
 export default function Header() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [calcOpen, setCalcOpen] = useState(false);
   const [learnOpen, setLearnOpen] = useState(false);
   const location = useLocation();
 
@@ -43,8 +50,43 @@ export default function Header() {
                   : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
               }`}
             >
-              Calculator
+              DMB Calculator
             </Link>
+
+            {/* Calculators dropdown */}
+            <div
+              className="relative"
+              onMouseEnter={() => setCalcOpen(true)}
+              onMouseLeave={() => setCalcOpen(false)}
+            >
+              <button
+                className={`flex items-center gap-1 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                  calcLinks.some(l => l.to === location.pathname)
+                    ? 'bg-teal-50 text-teal-700'
+                    : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                }`}
+              >
+                Feeding Calculators <ChevronDown className="w-3.5 h-3.5" />
+              </button>
+              {calcOpen && (
+                <div className="absolute left-0 top-full mt-1 w-64 bg-white rounded-xl shadow-lg border border-gray-100 py-1 z-50">
+                  {calcLinks.map(link => (
+                    <Link
+                      key={link.to}
+                      to={link.to}
+                      className={`block px-4 py-3 transition-colors ${
+                        location.pathname === link.to
+                          ? 'bg-teal-50 text-teal-700'
+                          : 'text-gray-700 hover:bg-gray-50 hover:text-teal-700'
+                      }`}
+                    >
+                      <div className="text-sm font-medium">{link.label}</div>
+                      <div className="text-xs text-gray-400 mt-0.5">{link.desc}</div>
+                    </Link>
+                  ))}
+                </div>
+              )}
+            </div>
 
             {/* Learn dropdown */}
             <div
@@ -115,7 +157,10 @@ export default function Header() {
         {menuOpen && (
           <div className="md:hidden border-t border-gray-100 py-3 space-y-1">
             {[
-              { to: '/', label: 'Calculator' },
+              { to: '/', label: 'DMB Calculator' },
+              { to: '/feeding-calculator', label: '🍽️ Feeding Calculator' },
+              { to: '/weight-loss-calculator', label: '📉 Weight Loss Calculator' },
+              { to: '/weight-gain-calculator', label: '📈 Weight Gain Calculator' },
               ...learnLinks,
               { to: '/food-search', label: 'Food Search' },
             ].map(link => (
