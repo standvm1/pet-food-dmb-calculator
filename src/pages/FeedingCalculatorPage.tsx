@@ -47,7 +47,9 @@ function toFoodInput(f: FormState): FoodInput {
 
 const sl = 'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-900';
 
-export default function FeedingCalculatorPage() {
+interface Props { embedded?: boolean }
+
+export default function FeedingCalculatorPage({ embedded }: Props = {}) {
   const [form, setForm] = useState<FormState>(defaultForm());
   const [showCalories, setShowCalories] = useState(false);
   const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -82,29 +84,33 @@ export default function FeedingCalculatorPage() {
 
   return (
     <>
-      <Helmet>
-        <title>Pet Feeding Calculator — How Much Should I Feed My Pet? | Atlas Veterinary Hospital</title>
-        <meta name="description" content="Free pet feeding calculator for dogs and cats. Enter your pet's weight and body condition score to get personalized daily feeding recommendations from Atlas Veterinary Hospital." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/feeding-calculator" />
-      </Helmet>
+      {!embedded && (
+        <Helmet>
+          <title>Pet Feeding Calculator — How Much Should I Feed My Pet? | Atlas Veterinary Hospital</title>
+          <meta name="description" content="Free pet feeding calculator for dogs and cats. Enter your pet's weight and body condition score to get personalized daily feeding recommendations from Atlas Veterinary Hospital." />
+          <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/feeding-calculator" />
+        </Helmet>
+      )}
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Hero */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-teal-100 rounded-2xl mb-4">
-            <Scale className="w-7 h-7 text-teal-600" />
+      <div className={embedded ? '' : 'max-w-4xl mx-auto px-4 sm:px-6 py-8'}>
+        {/* Hero — standalone only */}
+        {!embedded && (
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-teal-100 rounded-2xl mb-4">
+              <Scale className="w-7 h-7 text-teal-600" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
+              How Much Should I Feed My Pet?
+            </h1>
+            <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
+              Enter your pet's information below to get a personalized daily feeding recommendation — based on the same formula veterinarians use.
+            </p>
+            <div className="flex flex-wrap justify-center gap-3 mt-4 text-sm text-gray-500">
+              <Link to="/weight-loss-calculator" className="text-amber-600 hover:underline font-medium">My pet is overweight →</Link>
+              <Link to="/weight-gain-calculator" className="text-blue-600 hover:underline font-medium">My pet is underweight →</Link>
+            </div>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
-            How Much Should I Feed My Pet?
-          </h1>
-          <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
-            Enter your pet's information below to get a personalized daily feeding recommendation — based on the same formula veterinarians use.
-          </p>
-          <div className="flex flex-wrap justify-center gap-3 mt-4 text-sm text-gray-500">
-            <Link to="/weight-loss-calculator" className="text-amber-600 hover:underline font-medium">My pet is overweight →</Link>
-            <Link to="/weight-gain-calculator" className="text-blue-600 hover:underline font-medium">My pet is underweight →</Link>
-          </div>
-        </div>
+        )}
 
         <div className="grid lg:grid-cols-5 gap-8">
           {/* ── Form ── */}
@@ -151,9 +157,9 @@ export default function FeedingCalculatorPage() {
                   value={form.weight}
                   onChange={e => up('weight', e.target.value === '' ? '' : Number(e.target.value))}
                   placeholder="e.g. 25"
-                  className={sl + ' flex-1'}
+                  className="flex-1 min-w-0 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-900"
                 />
-                <select value={form.weightUnit} onChange={e => up('weightUnit', e.target.value)} className={sl + ' w-24'}>
+                <select value={form.weightUnit} onChange={e => up('weightUnit', e.target.value)} className="w-16 px-2 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-gray-900 text-center">
                   <option value="lbs">lbs</option>
                   <option value="kg">kg</option>
                 </select>
@@ -383,8 +389,8 @@ export default function FeedingCalculatorPage() {
           </div>
         </div>
 
-        {/* How it works */}
-        <div className="mt-12 border-t border-gray-100 pt-10">
+        {/* How it works — standalone only */}
+        {!embedded && <div className="mt-12 border-t border-gray-100 pt-10">
           <h2 className="text-xl font-bold text-gray-900 mb-6 text-center">How this calculator works</h2>
           <div className="grid sm:grid-cols-3 gap-6">
             {[
@@ -402,7 +408,7 @@ export default function FeedingCalculatorPage() {
           <p className="text-center text-xs text-gray-400 mt-6">
             Also compare food labels using our <Link to="/" className="text-teal-600 hover:underline">Dry Matter Basis Calculator</Link>.
           </p>
-        </div>
+        </div>}
       </div>
     </>
   );

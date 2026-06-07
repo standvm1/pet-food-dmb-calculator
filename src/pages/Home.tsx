@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ArrowLeftRight, ChevronRight } from 'lucide-react';
+import { ArrowLeftRight, ChevronRight, FlaskConical, Scale, TrendingDown, TrendingUp } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import CalculatorForm, { defaultFood } from '../components/CalculatorForm';
@@ -9,10 +9,23 @@ import ComparisonSummary from '../components/ComparisonSummary';
 import Disclaimer from '../components/Disclaimer';
 import AdSlot from '../components/AdSlot';
 import EmailCapture from '../components/EmailCapture';
+import FeedingCalculatorPage from './FeedingCalculatorPage';
+import WeightLossCalculatorPage from './WeightLossCalculatorPage';
+import WeightGainCalculatorPage from './WeightGainCalculatorPage';
 import { calculateDryMatterBasis } from '../utils/calculations';
 import type { FoodInput, DMBResult } from '../types';
 
+type Tab = 'dmb' | 'feeding' | 'weight-loss' | 'weight-gain';
+
+const TABS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
+  { id: 'dmb',         label: 'Food Label Comparison', icon: <FlaskConical className="w-4 h-4" />, desc: 'Compare wet vs. dry food on a level playing field' },
+  { id: 'feeding',     label: 'How Much to Feed',      icon: <Scale className="w-4 h-4" />,        desc: 'Daily portion based on weight & body condition' },
+  { id: 'weight-loss', label: 'Weight Loss Plan',      icon: <TrendingDown className="w-4 h-4" />, desc: 'Safe feeding plan for overweight pets' },
+  { id: 'weight-gain', label: 'Weight Gain Plan',      icon: <TrendingUp className="w-4 h-4" />,   desc: 'Help underweight pets reach a healthy weight' },
+];
+
 export default function Home() {
+  const [activeTab, setActiveTab] = useState<Tab>('dmb');
   const [foodA, setFoodA] = useState<FoodInput>(defaultFood());
   const [foodB, setFoodB] = useState<FoodInput>(defaultFood());
   const [resultA, setResultA] = useState<DMBResult | null>(null);
@@ -89,114 +102,108 @@ export default function Home() {
           </p>
         </div>
 
-        {/* Feeding calculator cards */}
-        <div className="grid sm:grid-cols-3 gap-4">
-          {[
-            { to: '/feeding-calculator', emoji: '🍽️', title: 'How Much Should I Feed?', desc: 'Get a personalized daily portion based on your pet\'s weight and body condition.', color: 'border-teal-200 hover:border-teal-400 hover:bg-teal-50' },
-            { to: '/weight-loss-calculator', emoji: '📉', title: 'Weight Loss Calculator', desc: 'Safe feeding plan for overweight pets — includes a timeline to reach ideal weight.', color: 'border-amber-200 hover:border-amber-400 hover:bg-amber-50' },
-            { to: '/weight-gain-calculator', emoji: '📈', title: 'Weight Gain Calculator', desc: 'Help underweight pets reach a healthy body condition safely and gradually.', color: 'border-blue-200 hover:border-blue-400 hover:bg-blue-50' },
-          ].map(card => (
-            <Link key={card.to} to={card.to}
-              className={`bg-white rounded-2xl border-2 p-5 transition-all group ${card.color}`}>
-              <div className="text-3xl mb-3">{card.emoji}</div>
-              <h3 className="font-bold text-gray-900 text-sm mb-1.5 group-hover:text-teal-700 transition-colors">{card.title}</h3>
-              <p className="text-xs text-gray-500 leading-relaxed">{card.desc}</p>
-            </Link>
-          ))}
+        {/* Quick example — only shown on DMB tab */}
+        {activeTab === 'dmb' && <FoodComparisonExample />}
+
+        {/* ── Tab bar ── */}
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          {/* Tabs */}
+          <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-gray-100">
+            {TABS.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`flex flex-col items-center gap-1.5 px-3 py-4 text-center transition-all border-b-2 ${
+                  activeTab === tab.id
+                    ? 'border-teal-600 bg-teal-50/60 text-teal-700'
+                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                }`}
+              >
+                <span className={`${activeTab === tab.id ? 'text-teal-600' : 'text-gray-400'}`}>
+                  {tab.icon}
+                </span>
+                <span className="text-xs font-semibold leading-tight">{tab.label}</span>
+                <span className="text-xs text-gray-400 leading-tight hidden sm:block">{tab.desc}</span>
+              </button>
+            ))}
+          </div>
+
+          {/* Tab content */}
+          <div className="p-5 sm:p-6">
+
+            {/* ── DMB Calculator ── */}
+            {activeTab === 'dmb' && (
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm text-gray-500">
+                    Enter values from the Guaranteed Analysis on the food label.{' '}
+                    <Link to="/what-is-dmb" className="text-teal-600 hover:underline">What is DMB?</Link>
+                  </p>
+                  <button
+                    onClick={() => setCompareMode(!compareMode)}
+                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors shrink-0 ml-4 ${
+                      compareMode
+                        ? 'bg-teal-600 text-white border-teal-600'
+                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
+                    }`}
+                  >
+                    <ArrowLeftRight className="w-4 h-4" />
+                    {compareMode ? 'Comparing A & B' : 'Compare Two Foods'}
+                  </button>
+                </div>
+
+                <div className={`grid gap-6 ${compareMode ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
+                  <CalculatorForm food={foodA} onChange={setFoodA} onCalculate={calcA} label={compareMode ? 'Food A' : 'Enter Food Label Values'} />
+                  {compareMode && <CalculatorForm food={foodB} onChange={setFoodB} onCalculate={calcB} label="Food B" />}
+                </div>
+
+                {(resultA || resultB) && (
+                  <div className={`grid gap-6 ${compareMode && resultA && resultB ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
+                    {resultA && <div id="results-a"><ResultsTable result={resultA} food={foodA} label={compareMode ? 'Food A Results' : 'Results'} /></div>}
+                    {compareMode && resultB && <div id="results-b"><ResultsTable result={resultB} food={foodB} label="Food B Results" /></div>}
+                  </div>
+                )}
+
+                {showComparison && (
+                  <div className="max-w-2xl mx-auto w-full">
+                    <ComparisonSummary foodA={foodA} foodB={foodB} resultA={resultA!} resultB={resultB!} />
+                  </div>
+                )}
+
+                <Disclaimer />
+              </div>
+            )}
+
+            {/* ── Feeding Calculator ── */}
+            {activeTab === 'feeding' && <FeedingCalculatorPage embedded />}
+
+            {/* ── Weight Loss ── */}
+            {activeTab === 'weight-loss' && <WeightLossCalculatorPage embedded />}
+
+            {/* ── Weight Gain ── */}
+            {activeTab === 'weight-gain' && <WeightGainCalculatorPage embedded />}
+          </div>
         </div>
 
-        {/* Quick example */}
-        <FoodComparisonExample />
-
-        {/* Learn more links */}
-        <div className="flex flex-wrap justify-center gap-3">
-          {[
-            { to: '/what-is-dmb', label: 'What is Dry Matter Basis?' },
-            { to: '/how-to-compare', label: 'How to Compare Foods' },
-            { to: '/cat-protein', label: 'Protein in Cat Food' },
-            { to: '/low-fat-dog', label: 'Low-Fat Dog Food' },
-          ].map(link => (
-            <Link
-              key={link.to}
-              to={link.to}
-              className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-700 font-medium border border-teal-200 hover:border-teal-300 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-colors"
-            >
-              {link.label} <ChevronRight className="w-4 h-4" />
-            </Link>
-          ))}
-        </div>
+        {/* Learn more links — only on DMB tab */}
+        {activeTab === 'dmb' && (
+          <div className="flex flex-wrap justify-center gap-3">
+            {[
+              { to: '/what-is-dmb', label: 'What is Dry Matter Basis?' },
+              { to: '/how-to-compare', label: 'How to Compare Foods' },
+              { to: '/cat-protein', label: 'Protein in Cat Food' },
+              { to: '/low-fat-dog', label: 'Low-Fat Dog Food' },
+            ].map(link => (
+              <Link key={link.to} to={link.to}
+                className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-700 font-medium border border-teal-200 hover:border-teal-300 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-colors">
+                {link.label} <ChevronRight className="w-4 h-4" />
+              </Link>
+            ))}
+          </div>
+        )}
 
         {/* Ad slot */}
         <AdSlot id="ad-top" size="banner" />
-
-        {/* Compare mode toggle */}
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold text-gray-900">Calculator</h2>
-          <button
-            onClick={() => setCompareMode(!compareMode)}
-            className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors ${
-              compareMode
-                ? 'bg-teal-600 text-white border-teal-600'
-                : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            <ArrowLeftRight className="w-4 h-4" />
-            {compareMode ? 'Side-by-Side Active' : 'Compare Two Foods'}
-          </button>
-        </div>
-
-        {/* Forms */}
-        <div className={`grid gap-6 ${compareMode ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
-          <div>
-            <CalculatorForm
-              food={foodA}
-              onChange={setFoodA}
-              onCalculate={calcA}
-              label={compareMode ? 'Food A' : 'Enter Food Label Values'}
-            />
-          </div>
-          {compareMode && (
-            <div>
-              <CalculatorForm
-                food={foodB}
-                onChange={setFoodB}
-                onCalculate={calcB}
-                label="Food B"
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Results */}
-        {(resultA || resultB) && (
-          <div className={`grid gap-6 ${compareMode && resultA && resultB ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
-            {resultA && (
-              <div id="results-a">
-                <ResultsTable result={resultA} food={foodA} label={compareMode ? 'Food A Results' : 'Results'} />
-              </div>
-            )}
-            {compareMode && resultB && (
-              <div id="results-b">
-                <ResultsTable result={resultB} food={foodB} label="Food B Results" />
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Comparison summary */}
-        {showComparison && (
-          <div className="max-w-2xl mx-auto w-full">
-            <ComparisonSummary
-              foodA={foodA}
-              foodB={foodB}
-              resultA={resultA!}
-              resultB={resultB!}
-            />
-          </div>
-        )}
-
-        {/* Disclaimer */}
-        <Disclaimer />
 
         {/* Nutrition consult CTA */}
         <div id="nutrition-consult" className="bg-gradient-to-br from-teal-600 to-teal-700 rounded-2xl p-6 sm:p-8 text-white text-center">
@@ -205,10 +212,8 @@ export default function Home() {
           <p className="text-teal-100 text-sm mb-5 max-w-md mx-auto leading-relaxed">
             The team at Atlas Veterinary Hospital can provide personalized nutrition guidance based on your pet's health history, body condition, and specific needs.
           </p>
-          <a
-            href="tel:9092226682"
-            className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold px-6 py-3 rounded-xl hover:bg-teal-50 transition-colors"
-          >
+          <a href="tel:9092226682"
+            className="inline-flex items-center gap-2 bg-white text-teal-700 font-bold px-6 py-3 rounded-xl hover:bg-teal-50 transition-colors">
             Call Us: 909-222-6682
           </a>
         </div>

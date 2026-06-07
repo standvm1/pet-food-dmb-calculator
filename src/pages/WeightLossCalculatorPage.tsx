@@ -48,7 +48,9 @@ const WEIGHT_LOSS_TIPS = [
   { title: 'Separate at mealtime', body: 'If you have multiple pets, feed them separately so the overweight pet can\'t eat other animals\' food.' },
 ];
 
-export default function WeightLossCalculatorPage() {
+interface Props { embedded?: boolean }
+
+export default function WeightLossCalculatorPage({ embedded }: Props = {}) {
   const [form, setForm] = useState<FormState>(defaultForm());
   const [showCalories, setShowCalories] = useState(false);
   const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -78,25 +80,28 @@ export default function WeightLossCalculatorPage() {
 
   return (
     <>
-      <Helmet>
-        <title>Pet Weight Loss Calculator — Safe Dog & Cat Diet Plan | Atlas Veterinary Hospital</title>
-        <meta name="description" content="Is your dog or cat overweight? Use our free pet weight loss calculator to get a safe daily feeding plan based on your pet's body condition score and weight." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/weight-loss-calculator" />
-      </Helmet>
+      {!embedded && (
+        <Helmet>
+          <title>Pet Weight Loss Calculator — Safe Dog & Cat Diet Plan | Atlas Veterinary Hospital</title>
+          <meta name="description" content="Is your dog or cat overweight? Use our free pet weight loss calculator to get a safe daily feeding plan based on your pet's body condition score and weight." />
+          <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/weight-loss-calculator" />
+        </Helmet>
+      )}
 
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 py-8">
-        {/* Hero */}
-        <div className="text-center max-w-2xl mx-auto mb-10">
-          <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-100 rounded-2xl mb-4">
-            <TrendingDown className="w-7 h-7 text-amber-600" />
+      <div className={embedded ? '' : 'max-w-4xl mx-auto px-4 sm:px-6 py-8'}>
+        {!embedded && (
+          <div className="text-center max-w-2xl mx-auto mb-10">
+            <div className="inline-flex items-center justify-center w-14 h-14 bg-amber-100 rounded-2xl mb-4">
+              <TrendingDown className="w-7 h-7 text-amber-600" />
+            </div>
+            <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
+              Pet Weight Loss Calculator
+            </h1>
+            <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
+              Over 50% of dogs and cats in the US are overweight. Even a small reduction in body weight can dramatically improve your pet's health, mobility, and lifespan.
+            </p>
           </div>
-          <h1 className="text-3xl sm:text-4xl font-extrabold text-gray-900 mb-3">
-            Pet Weight Loss Calculator
-          </h1>
-          <p className="text-gray-500 text-base sm:text-lg leading-relaxed">
-            Over 50% of dogs and cats in the US are overweight. Even a small reduction in body weight can dramatically improve your pet's health, mobility, and lifespan.
-          </p>
-        </div>
+        )}
 
         {/* Why it matters */}
         <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 mb-8">
@@ -148,8 +153,8 @@ export default function WeightLossCalculatorPage() {
               <div className="flex gap-2">
                 <input type="number" min="0.1" step="0.1" value={form.weight}
                   onChange={e => up('weight', e.target.value === '' ? '' : Number(e.target.value))}
-                  placeholder="e.g. 35" className={sl + ' flex-1'} />
-                <select value={form.weightUnit} onChange={e => up('weightUnit', e.target.value)} className={sl + ' w-24'}>
+                  placeholder="e.g. 35" className="flex-1 min-w-0 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-gray-900" />
+                <select value={form.weightUnit} onChange={e => up('weightUnit', e.target.value)} className="w-16 px-2 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white text-gray-900 text-center">
                   <option value="lbs">lbs</option>
                   <option value="kg">kg</option>
                 </select>
@@ -371,13 +376,15 @@ export default function WeightLossCalculatorPage() {
           </div>
         </div>
 
-        <div className="mt-8 pt-6 border-t border-gray-100 text-center text-sm text-gray-400">
-          <Link to="/feeding-calculator" className="text-teal-600 hover:underline">← General feeding calculator</Link>
-          {' · '}
-          <Link to="/weight-gain-calculator" className="text-teal-600 hover:underline">Weight gain calculator →</Link>
-          {' · '}
-          <Link to="/" className="text-teal-600 hover:underline">Compare food labels (DMB calculator)</Link>
-        </div>
+        {!embedded && (
+          <div className="mt-8 pt-6 border-t border-gray-100 text-center text-sm text-gray-400">
+            <Link to="/feeding-calculator" className="text-teal-600 hover:underline">← General feeding calculator</Link>
+            {' · '}
+            <Link to="/weight-gain-calculator" className="text-teal-600 hover:underline">Weight gain calculator →</Link>
+            {' · '}
+            <Link to="/" className="text-teal-600 hover:underline">Compare food labels (DMB calculator)</Link>
+          </div>
+        )}
       </div>
     </>
   );
