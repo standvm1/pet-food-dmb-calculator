@@ -1,217 +1,325 @@
-import { useState, useMemo } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
-import { mockFoods, DIET_TAGS } from '../data/mockFoodDatabase';
-import FoodCard from './FoodCard';
-import type { Species, FoodType } from '../types';
-
-// This component is designed to connect to a live food database API in the future.
-// Currently uses mockFoods from src/data/mockFoodDatabase.ts.
-// To connect live data: replace mockFoods with a fetched dataset and wire up the
-// search query to a backend search endpoint or Google Custom Search API.
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, SlidersHorizontal, X, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { useNavigate } from 'react-router-dom';
+import { searchPetFoods, type LiveFoodItem } from '../utils/openPetFoodFacts';
 
 interface Filters {
   query: string;
-  species: Species | 'both' | '';
-  foodType: FoodType | '';
-  tags: string[];
-  prescriptionOnly: boolean;
-  nonPrescriptionOnly: boolean;
+  species: 'dog' | 'cat' | '';
+  foodType: 'dry' | 'canned' | 'semi-moist' | 'treat' | '';
 }
 
-const defaultFilters = (): Filters => ({
-  query: '',
-  species: '',
-  foodType: '',
-  tags: [],
-  prescriptionOnly: false,
-  nonPrescriptionOnly: false,
-});
+const defaultFilters = (): Filters => ({ query: '', species: '', foodType: '' });
+
+const NUM = (v: number | null, suffix = '%') =>
+  v !== null ? `${v.toFixed(1)}${suffix}` : '—';
+
+function FoodResultCard({ food }: { food: LiveFoodItem }) {
+  const navigate = useNavigate();
+
+  const hasNutrients = food.proteinDMB !== null || food.fatDMB !== null;
+
+  function useInCalculator() {
+    const params = new URLSearchParams();
+    if (food.proteinAsFed !== null) params.set('protein', String(food.proteinAsFed));
+    if (food.fatAsFed !== null) params.set('fat', String(food.fatAsFed));
+    if (food.fiberAsFed !== null) params.set('fiber', String(food.fiberAsFed));
+    params.set('moisture', String(food.moisture));
+    if (food.moistureEstimated) params.set('moistureEst', '1');
+    if (food.kcalPerKg !== null) params.set('kcalPerKg', String(food.kcalPerKg));
+    params.set('foodType', food.foodType === 'unknown' ? 'dry' : food.foodType);
+    if (food.species === 'dog' || food.species === 'cat') params.set('species', food.species);
+    params.set('name', `${food.brand} ${food.productName}`);
+    navigate(`/?${params}`);
+  }
+
+  const speciesLabel = food.species === 'dog' ? '🐕 Dog' : food.species === 'cat' ? '🐈 Cat' : food.species === 'both' ? '🐾 Dog & Cat' : null;
+  const typeLabel = food.foodType === 'dry' ? '🥣 Dry' : food.foodType === 'canned' ? '🥫 Canned' : food.foodType === 'treat' ? '🦴 Treat' : food.foodType === 'semi-moist' ? '📦 Semi-Moist' : null;
+
+  return (
+    <div className="bg-white border border-gray-100 rounded-2xl shadow-sm overflow-hidden hover:shadow-md transition-shadow flex flex-col">
+      {/* Image strip */}
+      {food.imageUrl && (
+        <div className="h-24 bg-gray-50 flex items-center justify-center overflow-hidden">
+          <img
+            src={food.imageUrl}
+            alt={food.productName}
+            className="max-h-24 max-w-full object-contain p-2"
+            onError={e => { (e.target as HTMLImageElement).style.display = 'none'; }}
+          />
+        </div>
+      )}
+
+      <div className="p-4 flex flex-col flex-1 gap-3">
+        {/* Brand + name */}
+        <div>
+          <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider mb-0.5">{food.brand}</div>
+          <h3 className="font-bold text-gray-900 text-sm leading-snug">{food.productName}</h3>
+        </div>
+
+        {/* Badges */}
+        <div className="flex flex-wrap gap-1.5">
+          {speciesLabel && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${food.species === 'dog' ? 'bg-amber-100 text-amber-700' : food.species === 'cat' ? 'bg-purple-100 text-purple-700' : 'bg-gray-100 text-gray-600'}`}>
+              {speciesLabel}
+            </span>
+          )}
+          {typeLabel && (
+            <span className={`text-xs px-2 py-0.5 rounded-full font-medium ${food.foodType === 'dry' ? 'bg-orange-100 text-orange-700' : 'bg-teal-100 text-teal-700'}`}>
+              {typeLabel}
+            </span>
+          )}
+        </div>
+
+        {/* DMB nutrients */}
+        {hasNutrients ? (
+          <div className="grid grid-cols-3 gap-1.5">
+            {[
+              { label: 'Protein DMB', value: food.proteinDMB, color: 'text-teal-700' },
+              { label: 'Fat DMB', value: food.fatDMB, color: 'text-orange-600' },
+              { label: 'Fiber DMB', value: food.fiberDMB, color: 'text-emerald-600' },
+            ].map(n => (
+              <div key={n.label} className="bg-gray-50 rounded-xl p-2 text-center">
+                <div className={`text-sm font-bold ${n.color}`}>{NUM(n.value)}</div>
+                <div className="text-xs text-gray-400 mt-0.5 leading-tight">{n.label}</div>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="bg-amber-50 border border-amber-100 rounded-xl px-3 py-2">
+            <p className="text-xs text-amber-700">Nutritional data not yet in database. Use "View on OPFF" to check the product page.</p>
+          </div>
+        )}
+
+        {/* Moisture + calories */}
+        <div className="text-xs text-gray-400 flex flex-wrap gap-x-3">
+          <span>
+            Moisture: {food.moisture}%{food.moistureEstimated && ' (est.)'}
+          </span>
+          {food.kcalPerKg !== null && <span>{food.kcalPerKg.toLocaleString()} kcal/kg</span>}
+        </div>
+
+        {/* Actions */}
+        <div className="flex gap-2 mt-auto pt-1">
+          <button
+            onClick={useInCalculator}
+            disabled={!hasNutrients}
+            title={hasNutrients ? 'Pre-fill the DMB calculator with these values' : 'No nutritional data available'}
+            className="flex-1 text-xs font-semibold py-2 px-3 rounded-xl bg-teal-600 hover:bg-teal-700 text-white transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            Use in Calculator
+          </button>
+          {food.sourceUrl && (
+            <a
+              href={food.sourceUrl}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-xs transition-colors"
+              title="View on Open Pet Food Facts"
+            >
+              <ExternalLink className="w-3.5 h-3.5" />
+            </a>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function FoodSearch() {
   const [filters, setFilters] = useState<Filters>(defaultFilters());
+  const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showFilters, setShowFilters] = useState(false);
+  const [results, setResults] = useState<LiveFoodItem[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [hasSearched, setHasSearched] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const results = useMemo(() => {
-    return mockFoods.filter(food => {
-      if (filters.query) {
-        const q = filters.query.toLowerCase();
-        if (!food.brand.toLowerCase().includes(q) && !food.productName.toLowerCase().includes(q)) return false;
-      }
-      if (filters.species && filters.species !== 'both') {
-        if (food.species !== filters.species && food.species !== 'both') return false;
-      }
-      if (filters.foodType) {
-        if (food.foodType !== filters.foodType) return false;
-      }
-      if (filters.tags.length > 0) {
-        if (!filters.tags.some(tag => food.dietTags.some(t => t.toLowerCase().includes(tag.toLowerCase())))) return false;
-      }
-      if (filters.prescriptionOnly && !food.isPrescription) return false;
-      if (filters.nonPrescriptionOnly && food.isPrescription) return false;
-      return true;
-    });
-  }, [filters]);
+  // Debounce query
+  useEffect(() => {
+    const timer = setTimeout(() => setDebouncedQuery(filters.query), 500);
+    return () => clearTimeout(timer);
+  }, [filters.query]);
 
-  const sponsored = results.filter(f => f.sponsored);
-  const regular = results.filter(f => !f.sponsored);
+  // Fetch when debounced query or species changes
+  const doSearch = useCallback(async (query: string, species: 'dog' | 'cat' | '') => {
+    if (query.trim().length < 2) {
+      setResults([]);
+      setTotal(0);
+      setHasSearched(false);
+      return;
+    }
 
-  const toggleTag = (tag: string) => {
-    setFilters(prev => ({
-      ...prev,
-      tags: prev.tags.includes(tag) ? prev.tags.filter(t => t !== tag) : [...prev.tags, tag],
-    }));
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
+    setLoading(true);
+    setError('');
+    setHasSearched(true);
+
+    try {
+      const { items, total } = await searchPetFoods(query.trim(), species || '', abortRef.current.signal);
+
+      // Client-side food type filter (server-side doesn't support it cleanly)
+      const filtered = filters.foodType
+        ? items.filter(f => f.foodType === filters.foodType)
+        : items;
+
+      setResults(filtered);
+      setTotal(total);
+    } catch (e: unknown) {
+      if ((e as Error).name === 'AbortError') return;
+      setError('Search failed. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters.foodType]);
+
+  useEffect(() => {
+    doSearch(debouncedQuery, filters.species);
+  }, [debouncedQuery, filters.species, doSearch]);
+
+  const clearAll = () => {
+    setFilters(defaultFilters());
+    setResults([]);
+    setHasSearched(false);
+    setError('');
   };
-
-  const hasActiveFilters =
-    filters.species || filters.foodType || filters.tags.length > 0 || filters.prescriptionOnly || filters.nonPrescriptionOnly;
 
   return (
     <div className="space-y-5">
       {/* Info banner */}
-      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 text-sm text-blue-700">
-        <span className="font-semibold">Sample food database</span> — These are example foods for demonstration purposes only.
-        Nutritional values are approximate. This is not a recommendation or endorsement. Always consult your veterinarian before changing your pet's diet.
+      <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
+        <p className="text-sm text-blue-700">
+          <span className="font-semibold">Live data from Open Pet Food Facts</span> — a free, open-source pet food database with 100,000+ products.
+          Data is community-contributed; nutritional values may be incomplete for some products.
+          Click <strong>Use in Calculator</strong> to pre-fill the DMB calculator with a food's values.
+        </p>
       </div>
 
       {/* Search bar */}
       <div className="flex gap-3">
         <div className="relative flex-1">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+          {loading && <Loader2 className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-500 animate-spin" />}
           <input
             type="text"
             value={filters.query}
             onChange={e => setFilters(prev => ({ ...prev, query: e.target.value }))}
-            placeholder="Search brand or product name…"
-            className="w-full pl-10 pr-4 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-sm"
+            placeholder="Search brand or product name… (e.g. Royal Canin, Hill's, Purina)"
+            className="w-full pl-10 pr-10 py-3 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-sm"
           />
         </div>
         <button
           onClick={() => setShowFilters(!showFilters)}
           className={`flex items-center gap-2 px-4 py-3 rounded-xl border text-sm font-medium transition-colors ${
-            showFilters || hasActiveFilters
+            showFilters || filters.species || filters.foodType
               ? 'bg-teal-50 border-teal-300 text-teal-700'
               : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
           }`}
         >
           <SlidersHorizontal className="w-4 h-4" />
-          Filters
-          {hasActiveFilters && (
-            <span className="w-5 h-5 bg-teal-600 text-white text-xs rounded-full flex items-center justify-center font-bold">
-              {[filters.species, filters.foodType, ...filters.tags, filters.prescriptionOnly, filters.nonPrescriptionOnly].filter(Boolean).length}
-            </span>
-          )}
+          Filter
         </button>
-        {hasActiveFilters && (
-          <button
-            onClick={() => setFilters(defaultFilters())}
-            className="flex items-center gap-1 px-3 py-3 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm"
-          >
-            <X className="w-4 h-4" /> Clear
+        {(filters.query || filters.species || filters.foodType) && (
+          <button onClick={clearAll} className="flex items-center gap-1 px-3 py-3 rounded-xl border border-gray-200 text-gray-500 hover:bg-gray-50 text-sm">
+            <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
       {/* Filter panel */}
       {showFilters && (
-        <div className="bg-white border border-gray-100 rounded-2xl p-5 space-y-4 shadow-sm">
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+        <div className="bg-white border border-gray-100 rounded-2xl p-5 shadow-sm">
+          <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">Species</label>
-              <select
-                value={filters.species}
-                onChange={e => setFilters(prev => ({ ...prev, species: e.target.value as Filters['species'] }))}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
-              >
-                <option value="">All</option>
-                <option value="dog">Dog</option>
-                <option value="cat">Cat</option>
-              </select>
+              <div className="flex gap-2">
+                {(['', 'dog', 'cat'] as const).map(s => (
+                  <button key={s} onClick={() => setFilters(prev => ({ ...prev, species: s }))}
+                    className={`flex-1 text-xs font-medium py-2 rounded-xl border transition-colors ${
+                      filters.species === s ? 'bg-teal-50 border-teal-400 text-teal-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
+                    }`}>
+                    {s === '' ? 'All' : s === 'dog' ? '🐕 Dog' : '🐈 Cat'}
+                  </button>
+                ))}
+              </div>
             </div>
             <div>
               <label className="block text-xs font-semibold text-gray-600 mb-1.5">Food Type</label>
               <select
                 value={filters.foodType}
                 onChange={e => setFilters(prev => ({ ...prev, foodType: e.target.value as Filters['foodType'] }))}
-                className="w-full px-3 py-2.5 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
+                className="w-full px-3 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white"
               >
-                <option value="">All</option>
-                <option value="dry">Dry</option>
-                <option value="canned">Canned</option>
+                <option value="">All types</option>
+                <option value="dry">Dry / Kibble</option>
+                <option value="canned">Wet / Canned</option>
+                <option value="treat">Treats</option>
                 <option value="semi-moist">Semi-Moist</option>
-                <option value="treat">Treat</option>
               </select>
             </div>
-            <div className="sm:col-span-1 col-span-2">
-              <label className="block text-xs font-semibold text-gray-600 mb-1.5">Prescription Status</label>
-              <div className="flex gap-2">
-                <button
-                  onClick={() => setFilters(prev => ({ ...prev, prescriptionOnly: !prev.prescriptionOnly, nonPrescriptionOnly: false }))}
-                  className={`flex-1 text-xs font-medium px-3 py-2.5 rounded-xl border transition-colors ${
-                    filters.prescriptionOnly ? 'bg-blue-50 border-blue-300 text-blue-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  Rx Only
-                </button>
-                <button
-                  onClick={() => setFilters(prev => ({ ...prev, nonPrescriptionOnly: !prev.nonPrescriptionOnly, prescriptionOnly: false }))}
-                  className={`flex-1 text-xs font-medium px-3 py-2.5 rounded-xl border transition-colors ${
-                    filters.nonPrescriptionOnly ? 'bg-green-50 border-green-300 text-green-700' : 'bg-white border-gray-200 text-gray-600 hover:bg-gray-50'
-                  }`}
-                >
-                  OTC Only
-                </button>
-              </div>
-            </div>
-          </div>
-
-          {/* Diet tags */}
-          <div>
-            <label className="block text-xs font-semibold text-gray-600 mb-2">Diet Tags</label>
-            <div className="flex flex-wrap gap-2">
-              {DIET_TAGS.map(tag => (
-                <button
-                  key={tag}
-                  onClick={() => toggleTag(tag)}
-                  className={`text-xs px-3 py-1.5 rounded-full border font-medium transition-colors ${
-                    filters.tags.includes(tag)
-                      ? 'bg-teal-600 text-white border-teal-600'
-                      : 'bg-white text-gray-600 border-gray-200 hover:border-teal-300 hover:text-teal-700'
-                  }`}
-                >
-                  {tag}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
       )}
 
-      {/* Results count */}
-      <div className="text-sm text-gray-500">
-        {results.length === 0 ? 'No foods match your filters.' : `${results.length} food${results.length !== 1 ? 's' : ''} found`}
-      </div>
-
-      {/* Sponsored listings first */}
-      {sponsored.length > 0 && (
-        <div>
-          <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Sponsored</div>
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {sponsored.map(food => <FoodCard key={food.id} food={food} />)}
-          </div>
+      {/* State messages */}
+      {!hasSearched && !loading && (
+        <div className="text-center py-16 text-gray-400">
+          <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm font-medium">Start typing to search the database</p>
+          <p className="text-xs mt-1">Try "Royal Canin", "Purina Pro Plan", "Blue Buffalo", "Hill's Science Diet"…</p>
         </div>
       )}
 
-      {/* Regular results */}
-      {regular.length > 0 && (
-        <div>
-          {sponsored.length > 0 && (
-            <div className="text-xs font-semibold text-gray-400 uppercase tracking-wider mb-3">Results</div>
+      {error && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {hasSearched && !loading && !error && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            {results.length === 0
+              ? `No results for "${debouncedQuery}"`
+              : `Showing ${results.length} result${results.length !== 1 ? 's' : ''}${total > results.length ? ` of ${total.toLocaleString()} in database` : ''}`}
+          </p>
+          {filters.query.length > 0 && filters.query.length < 2 && (
+            <p className="text-xs text-gray-400">Type at least 2 characters</p>
           )}
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-            {regular.map(food => <FoodCard key={food.id} food={food} />)}
-          </div>
         </div>
       )}
+
+      {/* Results grid */}
+      {results.length > 0 && (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          {results.map(food => (
+            <FoodResultCard key={food.id} food={food} />
+          ))}
+        </div>
+      )}
+
+      {/* No results help */}
+      {hasSearched && !loading && results.length === 0 && !error && (
+        <div className="bg-gray-50 rounded-2xl p-6 text-center">
+          <p className="text-sm font-medium text-gray-700 mb-2">No products found</p>
+          <p className="text-xs text-gray-500 leading-relaxed max-w-sm mx-auto">
+            Try a shorter search term or just the brand name. Open Pet Food Facts has better coverage for major brands (Royal Canin, Purina, Hill's, Blue Buffalo, Iams, Orijen).
+          </p>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-400 text-center pt-2">
+        Data sourced from{' '}
+        <a href="https://world.openpetfoodfacts.org" target="_blank" rel="noopener noreferrer" className="underline hover:text-gray-600">
+          Open Pet Food Facts
+        </a>
+        {' '}(ODbL license). Nutritional values may be incomplete. Always verify with the product label.
+      </p>
     </div>
   );
 }

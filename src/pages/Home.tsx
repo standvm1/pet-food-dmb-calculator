@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ArrowLeftRight, ChevronRight, FlaskConical, Scale, TrendingDown, TrendingUp } from 'lucide-react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import CalculatorForm, { defaultFood } from '../components/CalculatorForm';
 import ResultsTable from '../components/ResultsTable';
@@ -25,8 +25,36 @@ const TABS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = 
 ];
 
 export default function Home() {
+  const [searchParams, setSearchParams] = useSearchParams();
   const [activeTab, setActiveTab] = useState<Tab>('dmb');
   const [foodA, setFoodA] = useState<FoodInput>(defaultFood());
+  const loadedRef = useRef(false);
+
+  // Pre-fill foodA from URL params when navigated from Food Search
+  useEffect(() => {
+    if (loadedRef.current) return;
+    const protein = searchParams.get('protein');
+    if (!protein) return;
+    loadedRef.current = true;
+
+    const get = (k: string) => searchParams.get(k);
+    setFoodA(prev => ({
+      ...prev,
+      name: get('name') ?? '',
+      protein: protein !== null ? Number(protein) : '',
+      fat: get('fat') !== null ? Number(get('fat')) : '',
+      fiber: get('fiber') !== null ? Number(get('fiber')) : '',
+      moisture: get('moisture') !== null ? Number(get('moisture')) : '',
+      kcalPerKg: get('kcalPerKg') !== null ? Number(get('kcalPerKg')) : '',
+      foodType: (get('foodType') as FoodInput['foodType']) ?? 'canned',
+      species: (get('species') as FoodInput['species']) ?? 'dog',
+    }));
+    setActiveTab('dmb');
+    setSearchParams({}, { replace: true }); // clean the URL
+    setTimeout(() => {
+      document.getElementById('calculator-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 100);
+  }, [searchParams, setSearchParams]);
   const [foodB, setFoodB] = useState<FoodInput>(defaultFood());
   const [resultA, setResultA] = useState<DMBResult | null>(null);
   const [resultB, setResultB] = useState<DMBResult | null>(null);
@@ -106,7 +134,7 @@ export default function Home() {
         {activeTab === 'dmb' && <FoodComparisonExample />}
 
         {/* ── Tab bar ── */}
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div id="calculator-tabs" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           {/* Tabs */}
           <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-gray-100">
             {TABS.map(tab => (
