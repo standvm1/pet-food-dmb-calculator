@@ -4,7 +4,6 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import CalculatorForm, { defaultFood } from '../components/CalculatorForm';
 import ResultsTable from '../components/ResultsTable';
-import FoodComparisonExample from '../components/FoodComparisonExample';
 import ComparisonSummary from '../components/ComparisonSummary';
 import Disclaimer from '../components/Disclaimer';
 import AdSlot from '../components/AdSlot';
@@ -129,9 +128,6 @@ export default function Home() {
             Dry matter basis removes the water so foods can be compared more fairly — and our feeding calculator gives you personalized daily portion recommendations.
           </p>
         </div>
-
-        {/* Quick example — only shown on DMB tab */}
-        {activeTab === 'dmb' && <FoodComparisonExample />}
 
         {/* ── Tab bar ── */}
         <div id="calculator-tabs" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">

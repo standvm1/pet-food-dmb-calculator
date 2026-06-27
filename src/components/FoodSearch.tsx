@@ -1,7 +1,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { Search, SlidersHorizontal, X, Loader2, AlertCircle, ExternalLink } from 'lucide-react';
+import { Search, SlidersHorizontal, X, Loader2, AlertCircle, ExternalLink, ShoppingCart } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { searchPetFoods, type LiveFoodItem } from '../utils/openPetFoodFacts';
+import { chewyLink } from '../config/affiliates';
 
 interface Filters {
   query: string;
@@ -109,6 +110,15 @@ function FoodResultCard({ food }: { food: LiveFoodItem }) {
           >
             Use in Calculator
           </button>
+          <a
+            href={chewyLink(`/s?query=${encodeURIComponent(`${food.brand} ${food.productName}`)}`)}
+            target="_blank"
+            rel="noopener noreferrer sponsored"
+            title="Search for this food on Chewy"
+            className="flex items-center justify-center gap-1 px-3 py-2 rounded-xl bg-[#00457c] hover:bg-[#003a6b] text-white text-xs transition-colors"
+          >
+            <ShoppingCart className="w-3.5 h-3.5" />
+          </a>
           {food.sourceUrl && (
             <a
               href={food.sourceUrl}
@@ -193,9 +203,10 @@ export default function FoodSearch() {
       {/* Info banner */}
       <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4">
         <p className="text-sm text-blue-700">
-          <span className="font-semibold">Live data from Open Pet Food Facts</span> — a free, open-source pet food database with 100,000+ products.
-          Data is community-contributed; nutritional values may be incomplete for some products.
-          Click <strong>Use in Calculator</strong> to pre-fill the DMB calculator with a food's values.
+          Search 100,000+ pet foods from the Open Pet Food Facts database.
+          Click <strong>Use in Calculator</strong> to pre-fill the DMB calculator, or the{' '}
+          <span className="inline-flex items-center gap-1 font-semibold text-[#00457c]"><ShoppingCart className="w-3 h-3" /> Chewy</span>{' '}
+          button to shop for that food on Chewy with your affiliate link.
         </p>
       </div>
 
