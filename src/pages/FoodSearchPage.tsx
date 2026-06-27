@@ -20,9 +20,9 @@ export default function FoodSearchPage() {
       <div>
         <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Food Search & Browse</h1>
         <p className="text-gray-500 text-sm leading-relaxed max-w-xl">
-          Browse sample foods filtered by species, food type, and diet goals.
+          Search thousands of real pet foods from the Open Pet Food Facts database, filtered by species and food type.
           All nutrient values shown are on a <strong>dry matter basis</strong>.
-          This database is for demonstration — connect to a live database API for production use.
+          Click "Use in Calculator" on any result to pre-fill the DMB calculator with that food's label values.
         </p>
       </div>
 

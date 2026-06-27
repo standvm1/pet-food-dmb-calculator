@@ -1,10 +1,12 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Scale, ChevronDown, ChevronUp, Info, Phone } from 'lucide-react';
+import { Scale, ChevronDown, ChevronUp, Info, Phone, CheckCircle2 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import BcsSelector from '../components/BcsSelector';
+import FoodRecommendations from '../components/FoodRecommendations';
 import { calculateFeeding } from '../utils/calculations';
 import type { FoodInput, ActivityLevel, LifeStage, CaloriesUnit } from '../types';
+import type { RecommendedFood, DietGoal } from '../data/dietRecommendations';
 
 interface FormState {
   petName: string;
@@ -52,10 +54,29 @@ interface Props { embedded?: boolean }
 export default function FeedingCalculatorPage({ embedded }: Props = {}) {
   const [form, setForm] = useState<FormState>(defaultForm());
   const [showCalories, setShowCalories] = useState(false);
+  const [loadedFood, setLoadedFood] = useState<string | null>(null);
   const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  function handleUseFood(food: RecommendedFood) {
+    up('kcalPerKg', food.kcalPerKg);
+    if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
+    else if (food.kcalPerCan) { up('calories', food.kcalPerCan); up('caloriesUnit', 'kcal/can'); }
+    else { up('calories', food.kcalPerKg); up('caloriesUnit', 'kcal/kg'); }
+    setShowCalories(true);
+    setLoadedFood(`${food.brand} ${food.name}`);
+    setTimeout(() => setLoadedFood(null), 4000);
+  }
 
   const feedingResult = calculateFeeding(toFoodInput(form));
   const bcsNum = form.bcs !== '' ? Number(form.bcs) : null;
+
+  const recommendationGoals: DietGoal[] = bcsNum === null
+    ? ['maintenance']
+    : bcsNum <= 2 ? ['weight-gain']
+    : bcsNum <= 4 ? ['weight-gain']
+    : bcsNum === 5 ? ['maintenance']
+    : bcsNum <= 7 ? ['weight-loss']
+    : ['weight-loss'];
 
   const primaryScenario = feedingResult
     ? bcsNum === null ? feedingResult.scenarios.maintenance
@@ -371,6 +392,14 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
                   </p>
                 </div>
 
+                {/* Loaded food banner */}
+                {loadedFood && (
+                  <div className="flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-xl px-4 py-3 text-sm text-teal-800 font-medium">
+                    <CheckCircle2 className="w-4 h-4 flex-shrink-0" />
+                    Loaded: {loadedFood} — calorie data filled in above.
+                  </div>
+                )}
+
                 {/* CTA */}
                 <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
                   <div className="text-3xl flex-shrink-0">🏥</div>
@@ -388,6 +417,15 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
             )}
           </div>
         </div>
+
+        {/* Recommended foods — only when there's a result */}
+        {feedingResult && (
+          <FoodRecommendations
+            species={form.species}
+            goals={recommendationGoals}
+            onUse={handleUseFood}
+          />
+        )}
 
         {/* How it works — standalone only */}
         {!embedded && <div className="mt-12 border-t border-gray-100 pt-10">
