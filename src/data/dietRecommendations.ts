@@ -67,7 +67,7 @@ const hillsRdDog = food({
   moisture: 10, protein: 20.5, fat: 8.5, fiber: 5.2, ash: 4.8,
   kcalPerKg: 3003, kcalPerCup: 308,
   highlight: 'Low calorie density — reduces daily portion while keeping your dog full',
-  chewyPath: '/hills-prescription-diet-rd-weight-reduction-chicken-dry-dog-food/dp/51977',
+  chewyPath: '/s?query=hills+prescription+diet+rd+weight+reduction+dog+dry',
 });
 
 const royalCaninSatietyDog = food({
@@ -93,7 +93,7 @@ const purinaOMDog = food({
   moisture: 12, protein: 32, fat: 8.5, fiber: 9,
   kcalPerKg: 2778, kcalPerCup: 233,
   highlight: 'High protein preserves muscle mass while cutting calories',
-  chewyPath: '/purina-pro-plan-veterinary-diets-om-overweight-management-dry-dog-food/dp/162440',
+  chewyPath: '/s?query=purina+pro+plan+veterinary+om+overweight+management+dog+dry',
 });
 
 const hillsPerfectWeightDog = food({
@@ -106,7 +106,7 @@ const hillsPerfectWeightDog = food({
   moisture: 10, protein: 25, fat: 10.1, fiber: 6.6,
   kcalPerKg: 3366, kcalPerCup: 324,
   highlight: 'No prescription needed — great OTC choice for mildly overweight dogs (BCS 6–7)',
-  chewyPath: '/hills-science-diet-adult-perfect-weight-chicken-recipe-dry-dog-food/dp/52074',
+  chewyPath: '/s?query=hills+science+diet+adult+perfect+weight+dog+dry',
 });
 
 const purinaFocusWeightDog = food({
@@ -119,7 +119,7 @@ const purinaFocusWeightDog = food({
   moisture: 12, protein: 30, fat: 10, fiber: 12,
   kcalPerKg: 3022, kcalPerCup: 265,
   highlight: 'High protein + high fiber with no prescription needed',
-  chewyPath: '/purina-pro-plan-focus-adult-weight-management-chicken-rice-formula/dp/35938',
+  chewyPath: '/s?query=purina+pro+plan+focus+weight+management+dog+dry',
 });
 
 // ─── DOG — MAINTENANCE ───────────────────────────────────────────────────────
@@ -134,7 +134,7 @@ const hillsAdultDog = food({
   moisture: 10, protein: 19.1, fat: 13.1, fiber: 2.3, ash: 5.9,
   kcalPerKg: 3728, kcalPerCup: 363,
   highlight: 'WSAVA-recommended brand with consistent formulation and quality control',
-  chewyPath: '/hills-science-diet-adult-chicken-barley-recipe-dry-dog-food/dp/52058',
+  chewyPath: '/s?query=hills+science+diet+adult+chicken+barley+dog+dry',
 });
 
 const purinaProPlanAdultDog = food({
@@ -147,7 +147,7 @@ const purinaProPlanAdultDog = food({
   moisture: 12, protein: 30, fat: 17, fiber: 3,
   kcalPerKg: 3989, kcalPerCup: 402,
   highlight: 'High protein with real chicken as the #1 ingredient — supports lean muscle',
-  chewyPath: '/purina-pro-plan-savor-adult-chicken-rice-formula-dry-dog-food/dp/14059',
+  chewyPath: '/s?query=purina+pro+plan+adult+chicken+rice+dog+dry',
 });
 
 // ─── DOG — WEIGHT GAIN ───────────────────────────────────────────────────────
@@ -162,7 +162,7 @@ const purinaSportDog = food({
   moisture: 12, protein: 30, fat: 20, fiber: 3,
   kcalPerKg: 4296, kcalPerCup: 459,
   highlight: 'High calorie density (4300 kcal/kg) — effective for underweight dogs',
-  chewyPath: '/purina-pro-plan-sport-performance-30-20-dry-dog-food/dp/14064',
+  chewyPath: '/s?query=purina+pro+plan+sport+performance+30+20+dog+dry',
 });
 
 const royalCaninRecoveryDog = food({
@@ -190,7 +190,7 @@ const hillsKdDog = food({
   moisture: 10, protein: 14.6, fat: 11.6, fiber: 0.7, ash: 4.3,
   kcalPerKg: 3695, kcalPerCup: 358,
   highlight: 'Low phosphorus (0.23%) and restricted protein — the clinical gold standard for CKD',
-  chewyPath: '/hills-prescription-diet-kd-kidney-care-chicken-dry-dog-food/dp/51979',
+  chewyPath: '/s?query=hills+prescription+diet+kd+kidney+care+dog+dry',
 });
 
 const royalCaninRenalDog = food({
@@ -218,7 +218,7 @@ const hillsPuppyDog = food({
   moisture: 10, protein: 25.4, fat: 14.1, fiber: 2.2,
   kcalPerKg: 3858, kcalPerCup: 391,
   highlight: 'AAFCO growth-approved with optimized calcium:phosphorus ratio for bone development',
-  chewyPath: '/hills-science-diet-puppy-chicken-barley-recipe-dry-dog-food/dp/51984',
+  chewyPath: '/s?query=hills+science+diet+puppy+chicken+barley+dog+dry',
 });
 
 const hillsPuppyLargeBreedDog = food({
@@ -231,7 +231,7 @@ const hillsPuppyLargeBreedDog = food({
   moisture: 10, protein: 25.4, fat: 12.3, fiber: 1.5,
   kcalPerKg: 3537, kcalPerCup: 342,
   highlight: 'Controlled calcium for large breeds — prevents too-rapid growth that stresses joints',
-  chewyPath: '/hills-science-diet-puppy-large-breed-chicken-meal-oat-recipe-dry-dog-food/dp/51987',
+  chewyPath: '/s?query=hills+science+diet+puppy+large+breed+dog+dry',
 });
 
 // ─── DOG — SENIOR ────────────────────────────────────────────────────────────
@@ -246,7 +246,7 @@ const hillsSeniorDog = food({
   moisture: 10, protein: 23.5, fat: 12.6, fiber: 2.6,
   kcalPerKg: 3599, kcalPerCup: 351,
   highlight: 'Clinically proven to improve vitality in dogs 7+ with antioxidants and omega-3s',
-  chewyPath: '/hills-science-diet-adult-7-chicken-meal-rice-recipe-dry-dog-food/dp/52055',
+  chewyPath: '/s?query=hills+science+diet+senior+7+plus+dog+dry',
 });
 
 // ─── CAT — WEIGHT LOSS ───────────────────────────────────────────────────────
@@ -261,7 +261,7 @@ const hillsRdCat = food({
   moisture: 10, protein: 28.5, fat: 8.6, fiber: 7.8,
   kcalPerKg: 3136, kcalPerCup: 209,
   highlight: 'Low calorie with high L-carnitine — supports fat burning in overweight cats',
-  chewyPath: '/hills-prescription-diet-rd-weight-reduction-chicken-dry-cat-food/dp/51999',
+  chewyPath: '/s?query=hills+prescription+diet+rd+weight+reduction+cat+dry',
 });
 
 const royalCaninSatietyCat = food({
@@ -274,7 +274,7 @@ const royalCaninSatietyCat = food({
   moisture: 8, protein: 40, fat: 11, fiber: 13,
   kcalPerKg: 3104, kcalPerCup: 243,
   highlight: 'Very high fiber promotes satiety — cats feel full on less food',
-  chewyPath: '/royal-canin-veterinary-diet-satiety-support-dry-cat-food/dp/165041',
+  chewyPath: '/s?query=royal+canin+satiety+support+cat+dry',
 });
 
 const purinaOMCat = food({
@@ -302,7 +302,7 @@ const hillsAdultCat = food({
   moisture: 10, protein: 30.1, fat: 17.1, fiber: 1.1,
   kcalPerKg: 3652, kcalPerCup: 316,
   highlight: 'WSAVA-recommended, taurine-complete, consistently formulated',
-  chewyPath: '/hills-science-diet-adult-chicken-recipe-dry-cat-food/dp/52000',
+  chewyPath: '/s?query=hills+science+diet+adult+chicken+cat+dry',
 });
 
 const purinaProPlanAdultCat = food({
@@ -315,7 +315,7 @@ const purinaProPlanAdultCat = food({
   moisture: 12, protein: 40, fat: 14, fiber: 3,
   kcalPerKg: 3680, kcalPerCup: 388,
   highlight: 'High protein, low fat — ideal for indoor cats prone to weight gain',
-  chewyPath: '/purina-pro-plan-savor-adult-indoor-turkey-rice-formula-dry-cat-food/dp/36049',
+  chewyPath: '/s?query=purina+pro+plan+adult+indoor+turkey+rice+cat+dry',
 });
 
 // ─── CAT — WEIGHT GAIN / KITTEN ──────────────────────────────────────────────
@@ -330,7 +330,7 @@ const purinaKittenCat = food({
   moisture: 12, protein: 45, fat: 22, fiber: 1.5,
   kcalPerKg: 4528, kcalPerCup: 449,
   highlight: 'High calorie density (4500 kcal/kg) — effective for underweight adult cats too',
-  chewyPath: '/purina-pro-plan-savor-kitten-chicken-rice-formula-dry-cat-food/dp/36040',
+  chewyPath: '/s?query=purina+pro+plan+kitten+chicken+rice+cat+dry',
 });
 
 const royalCaninKittenCat = food({
@@ -358,7 +358,7 @@ const hillsKdCat = food({
   moisture: 10, protein: 24.6, fat: 22.4, fiber: 0.5,
   kcalPerKg: 4176, kcalPerCup: 374,
   highlight: 'Low phosphorus (0.51%) with added omega-3s to slow CKD progression in cats',
-  chewyPath: '/hills-prescription-diet-kd-kidney-care-chicken-dry-cat-food/dp/52003',
+  chewyPath: '/s?query=hills+prescription+diet+kd+kidney+care+cat+dry',
 });
 
 const royalCaninRenalCat = food({
@@ -386,7 +386,7 @@ const hillsSeniorCat = food({
   moisture: 10, protein: 32.3, fat: 10.9, fiber: 6.3,
   kcalPerKg: 3369, kcalPerCup: 287,
   highlight: 'Lower calorie with extra fiber for senior indoor cats prone to weight gain',
-  chewyPath: '/hills-science-diet-adult-7-indoor-chicken-recipe-dry-cat-food/dp/52006',
+  chewyPath: '/s?query=hills+science+diet+adult+7+indoor+cat+dry',
 });
 
 // ─── CAT — URINARY ───────────────────────────────────────────────────────────
@@ -401,7 +401,7 @@ const hillsUrinaryCat = food({
   moisture: 10, protein: 28.4, fat: 11.5, fiber: 2.8,
   kcalPerKg: 3588, kcalPerCup: 279,
   highlight: 'Dissolves struvite stones and reduces recurrence of all common urinary crystals',
-  chewyPath: '/hills-prescription-diet-cd-multicare-urinary-care-chicken-dry-cat-food/dp/52001',
+  chewyPath: '/s?query=hills+prescription+diet+cd+multicare+urinary+cat+dry',
 });
 
 const royalCaninUrinaryCat = food({
