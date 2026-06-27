@@ -3,7 +3,7 @@
 // Once approved, paste your Impact Publisher ID below.
 // All Chewy links on this site will automatically include your tracking params.
 
-export const CHEWY_AFFILIATE_ID = ''; // e.g. '123456'
+export const CHEWY_AFFILIATE_ID = '8568126';
 
 // Impact Radius campaign tag (optional — customize in your Impact dashboard)
 const CAMPAIGN = 'atlas-vet-pet-food-calc';
