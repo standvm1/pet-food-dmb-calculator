@@ -20,9 +20,8 @@ export default function FoodSearchPage() {
       <div>
         <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Food Search & Browse</h1>
         <p className="text-gray-500 text-sm leading-relaxed max-w-xl">
-          Search our curated database of veterinarian-recommended diets, all available on Chewy.
-          Filter by species, goal (weight loss, kidney, senior, etc.), or brand.
-          Click <strong>Use in Calculator</strong> to pre-fill the DMB calculator, or <strong>Shop on Chewy</strong> to purchase with auto-ship discounts.
+          Search Chewy's full pet food catalog — millions of products from every major brand.
+          Type a diet name, brand, or goal (kidney, weight loss, senior, etc.) and shop directly on Chewy with auto-ship discounts.
         </p>
       </div>
 

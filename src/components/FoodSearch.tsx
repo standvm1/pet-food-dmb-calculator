@@ -1,152 +1,253 @@
-import { useState } from 'react';
-import { Search, X, ExternalLink } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import { DIET_RECOMMENDATIONS, type RecommendedFood, type DietGoal } from '../data/dietRecommendations';
-import { chewyLink } from '../config/affiliates';
-import FoodRecommendationCard from './FoodRecommendationCard';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { Search, X, Loader2, AlertCircle, ExternalLink, ShoppingCart, ChevronLeft, ChevronRight } from 'lucide-react';
 
-const GOAL_OPTIONS: { value: DietGoal | ''; label: string }[] = [
-  { value: '', label: 'All goals' },
-  { value: 'weight-loss', label: 'Weight loss' },
-  { value: 'weight-gain', label: 'Weight gain' },
-  { value: 'maintenance', label: 'Maintenance' },
-  { value: 'kidney', label: 'Kidney support' },
-  { value: 'puppy', label: 'Puppy / Kitten' },
-  { value: 'senior', label: 'Senior' },
-  { value: 'urinary', label: 'Urinary health' },
-];
+interface ChewyProduct {
+  id: string;
+  name: string;
+  brand: string;
+  price: string | null;
+  imageUrl: string | null;
+  chewyUrl: string;
+  category: string;
+  inStock: boolean;
+}
 
-function searchFoods(query: string, species: 'dog' | 'cat' | '', goal: DietGoal | ''): RecommendedFood[] {
-  const q = query.toLowerCase().trim();
-  return DIET_RECOMMENDATIONS.filter(f => {
-    if (species && f.species !== species && f.species !== 'both') return false;
-    if (goal && !f.goals.includes(goal)) return false;
-    if (!q) return true;
-    return (
-      f.brand.toLowerCase().includes(q) ||
-      f.name.toLowerCase().includes(q) ||
-      f.highlight.toLowerCase().includes(q) ||
-      f.goals.some(g => g.includes(q))
-    );
-  });
+interface SearchResponse {
+  configured: boolean;
+  items: ChewyProduct[];
+  total: number;
+  page?: number;
+  error?: string;
+}
+
+function ProductCard({ product }: { product: ChewyProduct }) {
+  return (
+    <div className="bg-white border border-gray-100 rounded-xl shadow-sm flex flex-col overflow-hidden hover:shadow-md transition-shadow">
+      {/* Image */}
+      <div className="h-32 bg-gray-50 flex items-center justify-center overflow-hidden flex-shrink-0">
+        {product.imageUrl ? (
+          <img
+            src={product.imageUrl}
+            alt={product.name}
+            className="max-h-32 max-w-full object-contain p-3"
+            onError={e => { (e.target as HTMLImageElement).parentElement!.style.display = 'none'; }}
+          />
+        ) : (
+          <ShoppingCart className="w-8 h-8 text-gray-200" />
+        )}
+      </div>
+
+      <div className="p-3 flex flex-col flex-1 gap-2">
+        {product.brand && (
+          <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider truncate">{product.brand}</div>
+        )}
+        <h3 className="text-sm font-semibold text-gray-900 leading-snug line-clamp-2 flex-1">{product.name}</h3>
+
+        {product.price && (
+          <div className="text-sm font-bold text-gray-700">${product.price}</div>
+        )}
+
+        <a
+          href={product.chewyUrl}
+          target="_blank"
+          rel="noopener noreferrer sponsored"
+          className="flex items-center justify-center gap-1.5 w-full bg-[#00457c] hover:bg-[#003a6b] text-white text-xs font-semibold py-2 rounded-lg transition-colors mt-auto"
+        >
+          <ShoppingCart className="w-3.5 h-3.5" />
+          Shop on Chewy
+          <ExternalLink className="w-3 h-3 opacity-70" />
+        </a>
+      </div>
+    </div>
+  );
 }
 
 export default function FoodSearch() {
-  const navigate = useNavigate();
   const [query, setQuery] = useState('');
-  const [species, setSpecies] = useState<'dog' | 'cat' | ''>('');
-  const [goal, setGoal] = useState<DietGoal | ''>('');
+  const [debouncedQuery, setDebouncedQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const [results, setResults] = useState<ChewyProduct[]>([]);
+  const [total, setTotal] = useState(0);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [configured, setConfigured] = useState<boolean | null>(null);
+  const [hasSearched, setHasSearched] = useState(false);
+  const abortRef = useRef<AbortController | null>(null);
 
-  const results = searchFoods(query, species, goal);
-  const hasFilters = query || species || goal;
+  const PAGE_SIZE = 24;
+  const totalPages = Math.ceil(total / PAGE_SIZE);
 
-  function handleUse(food: RecommendedFood) {
-    const params = new URLSearchParams();
-    params.set('protein', String(food.protein));
-    params.set('fat', String(food.fat));
-    params.set('fiber', String(food.fiber));
-    params.set('moisture', String(food.moisture));
-    params.set('kcalPerKg', String(food.kcalPerKg));
-    params.set('foodType', food.foodType);
-    if (food.species !== 'both') params.set('species', food.species);
-    params.set('name', `${food.brand} ${food.name}`);
-    navigate(`/?${params}`);
+  // Debounce query
+  useEffect(() => {
+    setPage(1);
+    const t = setTimeout(() => setDebouncedQuery(query), 400);
+    return () => clearTimeout(t);
+  }, [query]);
+
+  const doSearch = useCallback(async (q: string, p: number) => {
+    if (q.trim().length < 2) {
+      setResults([]);
+      setTotal(0);
+      setHasSearched(false);
+      return;
+    }
+
+    abortRef.current?.abort();
+    abortRef.current = new AbortController();
+
+    setLoading(true);
+    setError('');
+    setHasSearched(true);
+
+    try {
+      const res = await fetch(
+        `/.netlify/functions/chewy-search?q=${encodeURIComponent(q.trim())}&page=${p}`,
+        { signal: abortRef.current.signal }
+      );
+
+      const data: SearchResponse = await res.json();
+
+      if (data.configured === false) {
+        setConfigured(false);
+        setResults([]);
+        return;
+      }
+
+      setConfigured(true);
+
+      if (data.error) {
+        setError(data.error);
+        return;
+      }
+
+      setResults(data.items ?? []);
+      setTotal(data.total ?? 0);
+    } catch (e: unknown) {
+      if ((e as Error).name === 'AbortError') return;
+      setError('Search failed. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    doSearch(debouncedQuery, page);
+  }, [debouncedQuery, page, doSearch]);
+
+  function changePage(newPage: number) {
+    setPage(newPage);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
-
-  const chewySearchUrl = chewyLink(`/s?query=${encodeURIComponent(query || 'prescription pet food')}`);
 
   return (
     <div className="space-y-5">
       {/* Search bar */}
       <div className="relative">
         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+        {loading && (
+          <Loader2 className="absolute right-4 top-1/2 -translate-y-1/2 w-4 h-4 text-teal-500 animate-spin" />
+        )}
         <input
           type="text"
           value={query}
           onChange={e => setQuery(e.target.value)}
-          placeholder="Search by brand or diet type — e.g. Hill's, Royal Canin, kidney, weight loss…"
-          className="w-full pl-11 pr-10 py-3.5 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-sm shadow-sm"
+          placeholder="Search Chewy — e.g. Hill's Prescription Diet, Royal Canin kidney, Purina OM…"
+          className="w-full pl-11 pr-10 py-4 border border-gray-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-teal-500 bg-white text-sm shadow-sm"
           autoFocus
         />
-        {query && (
-          <button onClick={() => setQuery('')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+        {query && !loading && (
+          <button onClick={() => { setQuery(''); setResults([]); setHasSearched(false); }}
+            className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
             <X className="w-4 h-4" />
           </button>
         )}
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-wrap gap-3">
-        <div className="flex gap-1.5">
-          {([['', 'All'], ['dog', '🐕 Dog'], ['cat', '🐈 Cat']] as const).map(([v, label]) => (
-            <button key={v} onClick={() => setSpecies(v)}
-              className={`px-3 py-1.5 rounded-lg text-xs font-medium border transition-colors ${
-                species === v ? 'bg-teal-50 border-teal-400 text-teal-700' : 'bg-white border-gray-200 text-gray-500 hover:bg-gray-50'
-              }`}>
-              {label}
-            </button>
-          ))}
-        </div>
-        <select
-          value={goal}
-          onChange={e => setGoal(e.target.value as DietGoal | '')}
-          className="px-3 py-1.5 border border-gray-200 rounded-lg text-xs text-gray-600 bg-white focus:outline-none focus:ring-2 focus:ring-teal-500"
-        >
-          {GOAL_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-        </select>
-        {hasFilters && (
-          <button onClick={() => { setQuery(''); setSpecies(''); setGoal(''); }}
-            className="px-3 py-1.5 text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1">
-            <X className="w-3 h-3" /> Clear
-          </button>
-        )}
-      </div>
-
-      {/* Result count */}
-      <p className="text-xs text-gray-400">
-        {results.length} diet{results.length !== 1 ? 's' : ''} in our curated Chewy database
-        {query && ` matching "${query}"`}
-      </p>
-
-      {/* Results */}
-      {results.length > 0 ? (
-        <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5">
-          {results.map(food => (
-            <FoodRecommendationCard key={food.id} food={food} onUse={handleUse} />
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-10 text-gray-400">
-          <Search className="w-8 h-8 mx-auto mb-3 opacity-30" />
-          <p className="text-sm font-medium">No matching diets found</p>
-          <p className="text-xs mt-1">Try searching "Hill's", "Royal Canin", "kidney", or "weight loss"</p>
+      {/* Not yet configured */}
+      {configured === false && (
+        <div className="bg-amber-50 border border-amber-200 rounded-xl p-5">
+          <p className="text-sm font-semibold text-amber-800 mb-2">Chewy catalog API not connected yet</p>
+          <p className="text-sm text-amber-700 mb-3">
+            To enable live Chewy product search, add these three environment variables in your Netlify dashboard
+            (Site settings → Environment variables):
+          </p>
+          <ul className="text-xs font-mono bg-white border border-amber-200 rounded-lg p-3 space-y-1 text-gray-700">
+            <li><span className="text-teal-700 font-bold">IMPACT_ACCOUNT_SID</span> — Settings → API in your Impact dashboard</li>
+            <li><span className="text-teal-700 font-bold">IMPACT_AUTH_TOKEN</span> — Settings → API in your Impact dashboard</li>
+            <li><span className="text-teal-700 font-bold">IMPACT_CHEWY_CATALOG_ID</span> — Content → Data Feeds → Chewy (number in the URL)</li>
+          </ul>
+          <p className="text-xs text-amber-600 mt-3">After adding the variables, trigger a redeploy in Netlify for them to take effect.</p>
         </div>
       )}
 
-      {/* Chewy CTA */}
-      <div className="flex items-center justify-between bg-gray-50 border border-gray-100 rounded-xl px-5 py-4">
-        <div>
-          <p className="text-sm font-semibold text-gray-700">
-            {query ? `Search "${query}" on Chewy` : 'Browse all pet foods on Chewy'}
-          </p>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Thousands of foods with reviews, prices, and auto-ship discounts
+      {/* Error */}
+      {error && (
+        <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
+          <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0 mt-0.5" />
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
+      )}
+
+      {/* Idle state */}
+      {!hasSearched && !loading && configured !== false && (
+        <div className="text-center py-16 text-gray-400">
+          <Search className="w-10 h-10 mx-auto mb-3 opacity-30" />
+          <p className="text-sm font-medium">Start typing to search Chewy's catalog</p>
+          <p className="text-xs mt-1">Try "Hill's r/d", "Royal Canin kidney", "Purina Overweight", "Blue Buffalo senior"…</p>
+        </div>
+      )}
+
+      {/* Result count */}
+      {hasSearched && !loading && configured !== false && (
+        <div className="flex items-center justify-between">
+          <p className="text-sm text-gray-500">
+            {results.length === 0
+              ? `No results for "${debouncedQuery}"`
+              : `${total.toLocaleString()} results for "${debouncedQuery}" — showing page ${page} of ${totalPages}`}
           </p>
         </div>
-        <a
-          href={chewySearchUrl}
-          target="_blank"
-          rel="noopener noreferrer sponsored"
-          className="flex items-center gap-1.5 ml-4 flex-shrink-0 bg-[#00457c] hover:bg-[#003a6b] text-white text-sm font-semibold px-4 py-2.5 rounded-xl transition-colors"
-        >
-          Chewy <ExternalLink className="w-3.5 h-3.5" />
-        </a>
-      </div>
+      )}
 
-      <p className="text-xs text-gray-400 leading-relaxed">
+      {/* Results grid */}
+      {results.length > 0 && (
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
+          {results.map(product => (
+            <ProductCard key={product.id} product={product} />
+          ))}
+        </div>
+      )}
+
+      {/* No results */}
+      {hasSearched && !loading && results.length === 0 && !error && configured !== false && (
+        <div className="bg-gray-50 rounded-2xl p-6 text-center">
+          <p className="text-sm font-medium text-gray-700 mb-2">No products found</p>
+          <p className="text-xs text-gray-500">Try a shorter search term or just the brand name.</p>
+        </div>
+      )}
+
+      {/* Pagination */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3 pt-2">
+          <button
+            onClick={() => changePage(page - 1)}
+            disabled={page <= 1}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+          >
+            <ChevronLeft className="w-4 h-4" /> Prev
+          </button>
+          <span className="text-sm text-gray-500">Page {page} of {totalPages}</span>
+          <button
+            onClick={() => changePage(page + 1)}
+            disabled={page >= totalPages}
+            className="flex items-center gap-1 px-3 py-2 rounded-lg border border-gray-200 text-sm text-gray-600 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+          >
+            Next <ChevronRight className="w-4 h-4" />
+          </button>
+        </div>
+      )}
+
+      <p className="text-xs text-gray-400 text-center leading-relaxed pt-2">
         Atlas Veterinary Hospital may earn a commission from qualifying Chewy purchases at no extra cost to you.
-        Rx diets require a veterinarian prescription —{' '}
-        <a href="tel:9092226682" className="text-teal-600 hover:underline">call us at 909-222-6682</a>.
       </p>
     </div>
   );
