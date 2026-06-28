@@ -20,9 +20,9 @@ export default function FoodSearchPage() {
       <div>
         <h1 className="text-3xl font-extrabold text-gray-900 mb-2">Food Search & Browse</h1>
         <p className="text-gray-500 text-sm leading-relaxed max-w-xl">
-          Search thousands of real pet foods from the Open Pet Food Facts database, filtered by species and food type.
-          All nutrient values shown are on a <strong>dry matter basis</strong>.
-          Click "Use in Calculator" on any result to pre-fill the DMB calculator with that food's label values.
+          Search our curated database of veterinarian-recommended diets, all available on Chewy.
+          Filter by species, goal (weight loss, kidney, senior, etc.), or brand.
+          Click <strong>Use in Calculator</strong> to pre-fill the DMB calculator, or <strong>Shop on Chewy</strong> to purchase with auto-ship discounts.
         </p>
       </div>
 
