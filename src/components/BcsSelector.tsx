@@ -1,3 +1,5 @@
+import BcsIllustration from './BcsIllustration';
+
 interface BcsSelectorProps {
   value: number | '';
   onChange: (bcs: number) => void;
@@ -133,21 +135,30 @@ export default function BcsSelector({ value, onChange, species }: BcsSelectorPro
         })}
       </div>
 
-      {/* Description card */}
+      {/* Description card + illustration */}
       {selected ? (
         <div className={`rounded-xl border p-4 ${selected.bg} transition-all`}>
-          <div className="flex items-center gap-2 mb-2">
+          <div className="flex items-center gap-2 mb-3">
             <span className={`text-lg font-extrabold ${selected.color}`}>BCS {value}/9</span>
             <span className={`text-sm font-semibold ${selected.color}`}>— {selected.status}</span>
           </div>
-          <p className={`text-sm leading-relaxed ${selected.text} opacity-90`}>
-            {species === 'cat' ? selected.cat : selected.dog}
-          </p>
-          {(value === 1 || value === 2 || value === 8 || value === 9) && (
-            <p className={`text-xs font-semibold mt-2 ${selected.text}`}>
-              ⚠️ Veterinary evaluation is recommended at this body condition score.
-            </p>
-          )}
+          <div className="flex gap-4 items-start">
+            {/* SVG illustration */}
+            <div className="w-44 flex-shrink-0">
+              <BcsIllustration bcs={value as number} species={species} />
+            </div>
+            {/* Text */}
+            <div className="flex-1 space-y-2">
+              <p className={`text-sm leading-relaxed ${selected.text} opacity-90`}>
+                {species === 'cat' ? selected.cat : selected.dog}
+              </p>
+              {(value === 1 || value === 2 || value === 8 || value === 9) && (
+                <p className={`text-xs font-semibold ${selected.text}`}>
+                  ⚠️ Veterinary evaluation is recommended at this body condition score.
+                </p>
+              )}
+            </div>
+          </div>
         </div>
       ) : (
         <div className="rounded-xl border border-dashed border-gray-200 p-4 text-center text-sm text-gray-400">
