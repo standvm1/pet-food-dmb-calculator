@@ -12,7 +12,11 @@ export type DietGoal =
   | 'puppy'
   | 'senior'
   | 'urinary'
-  | 'low-fat';
+  | 'low-fat'
+  | 'hepatic'
+  | 'cardiac'
+  | 'diabetic'
+  | 'hypoallergenic';
 
 export interface RecommendedFood {
   id: string;
@@ -443,6 +447,241 @@ const royalCaninUrinaryCat = food({
   chewyPath: '/s?query=royal+canin+urinary+so+dry+cat+food',
 });
 
+// ─── DOG — LOW-FAT / PANCREATITIS ────────────────────────────────────────────
+
+const hillsIdLowFatDog = food({
+  id: 'hills-id-low-fat-dog',
+  brand: "Hill's Prescription Diet",
+  name: 'i/d Low Fat Digestive Care (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['low-fat'],
+  isRx: true,
+  moisture: 10, protein: 23, fat: 5.5, fiber: 3.4,
+  kcalPerKg: 3245, kcalPerCup: 312,
+  highlight: 'Only 5.5% fat as-fed — clinically proven for pancreatitis and fat-sensitive GI disease in dogs',
+  chewyPath: '/s?query=hills+prescription+diet+id+low+fat+digestive+dog+dry',
+});
+
+const royalCaninGILowFatDog = food({
+  id: 'rc-gi-low-fat-dog',
+  brand: 'Royal Canin Veterinary Diet',
+  name: 'Gastrointestinal Low Fat (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['low-fat'],
+  isRx: true,
+  moisture: 8.5, protein: 18, fat: 7, fiber: 1.8,
+  kcalPerKg: 3115, kcalPerCup: 295,
+  highlight: 'Low fat with added EPA/DHA and antioxidants to support GI recovery',
+  chewyPath: '/s?query=royal+canin+gastrointestinal+low+fat+dry+dog+food',
+});
+
+const purinaENLowFatDog = food({
+  id: 'purina-en-dog',
+  brand: 'Purina Pro Plan Veterinary Diets',
+  name: 'EN Gastroenteric Low Fat (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['low-fat'],
+  isRx: true,
+  moisture: 12, protein: 26, fat: 6, fiber: 3,
+  kcalPerKg: 3173, kcalPerCup: 304,
+  highlight: 'Highly digestible with restricted fat — formulated for acute and chronic GI disease',
+  chewyPath: '/s?query=purina+pro+plan+veterinary+EN+gastroenteric+low+fat+dog',
+});
+
+// ─── DOG — HEPATIC ────────────────────────────────────────────────────────────
+
+const hillsLdDog = food({
+  id: 'hills-ld-dog',
+  brand: "Hill's Prescription Diet",
+  name: 'l/d Liver Care (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['hepatic'],
+  isRx: true,
+  moisture: 10, protein: 14.8, fat: 20.4, fiber: 3.3,
+  kcalPerKg: 4083, kcalPerCup: 384,
+  highlight: 'Restricted moderate-quality protein + added antioxidants (vitamin E/C) to protect liver cells',
+  chewyPath: '/s?query=hills+prescription+diet+ld+liver+care+dog+dry',
+});
+
+const royalCaninHepaticDog = food({
+  id: 'rc-hepatic-dog',
+  brand: 'Royal Canin Veterinary Diet',
+  name: 'Hepatic (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['hepatic'],
+  isRx: true,
+  moisture: 9, protein: 18.5, fat: 16, fiber: 2.3,
+  kcalPerKg: 3852, kcalPerCup: 365,
+  highlight: 'Low copper content with high-energy density to support calorie intake in anorexic patients',
+  chewyPath: '/s?query=royal+canin+hepatic+dry+dog+food',
+});
+
+// ─── CAT — HEPATIC ────────────────────────────────────────────────────────────
+
+const hillsLdCat = food({
+  id: 'hills-ld-cat',
+  brand: "Hill's Prescription Diet",
+  name: 'l/d Liver Care (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['hepatic'],
+  isRx: true,
+  moisture: 9, protein: 22.5, fat: 16.8, fiber: 2.5,
+  kcalPerKg: 3879, kcalPerCup: 344,
+  highlight: 'Moderate protein with added taurine and zinc — critical for hepatic lipidosis recovery in cats',
+  chewyPath: '/s?query=hills+prescription+diet+ld+liver+care+cat+dry',
+});
+
+const royalCaninHepaticCat = food({
+  id: 'rc-hepatic-cat',
+  brand: 'Royal Canin Veterinary Diet',
+  name: 'Hepatic (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['hepatic'],
+  isRx: true,
+  moisture: 8, protein: 30, fat: 18, fiber: 3.5,
+  kcalPerKg: 3914, kcalPerCup: 358,
+  highlight: 'High palatability and energy density to combat anorexia during hepatic lipidosis treatment',
+  chewyPath: '/s?query=royal+canin+hepatic+dry+cat+food',
+});
+
+// ─── DOG — CARDIAC ────────────────────────────────────────────────────────────
+
+const hillsHdDog = food({
+  id: 'hills-hd-dog',
+  brand: "Hill's Prescription Diet",
+  name: 'h/d Heart Care (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['cardiac'],
+  isRx: true,
+  moisture: 10, protein: 18.5, fat: 14.9, fiber: 2.3,
+  kcalPerKg: 3624, kcalPerCup: 338,
+  highlight: 'Low sodium (~81 mg/100 kcal) with omega-3s and taurine — designed for Stage B2–D heart disease',
+  chewyPath: '/s?query=hills+prescription+diet+hd+heart+care+dog+dry',
+});
+
+const royalCaninCardiacDog = food({
+  id: 'rc-cardiac-dog',
+  brand: 'Royal Canin Veterinary Diet',
+  name: 'Cardiac (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['cardiac'],
+  isRx: true,
+  moisture: 9.5, protein: 22.5, fat: 12, fiber: 5.7,
+  kcalPerKg: 3314, kcalPerCup: 320,
+  highlight: 'Restricted sodium with L-carnitine, taurine, and EPA/DHA to support cardiac muscle function',
+  chewyPath: '/s?query=royal+canin+cardiac+dry+dog+food',
+});
+
+// ─── CAT — DIABETIC ───────────────────────────────────────────────────────────
+
+const hillsMdCat = food({
+  id: 'hills-md-cat',
+  brand: "Hill's Prescription Diet",
+  name: 'm/d Glucose/Weight Management (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['diabetic', 'weight-loss'],
+  isRx: true,
+  moisture: 10, protein: 44, fat: 13.5, fiber: 6.2,
+  kcalPerKg: 3394, kcalPerCup: 292,
+  highlight: 'Very high protein, low carb — clinically proven to induce diabetic remission in cats when combined with insulin therapy',
+  chewyPath: '/s?query=hills+prescription+diet+md+glucose+weight+cat+dry',
+});
+
+const purinaDMCat = food({
+  id: 'purina-dm-cat',
+  brand: 'Purina Pro Plan Veterinary Diets',
+  name: 'DM Dietetic Management (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['diabetic'],
+  isRx: true,
+  moisture: 12, protein: 55, fat: 22, fiber: 1.5,
+  kcalPerKg: 4408, kcalPerCup: 445,
+  highlight: 'Highest protein available (~63% DMB) with minimal carbs — best choice for maximizing diabetic remission chance',
+  chewyPath: '/s?query=purina+pro+plan+veterinary+DM+diabetic+cat+dry',
+});
+
+const royalCaninDiabeticCat = food({
+  id: 'rc-diabetic-cat',
+  brand: 'Royal Canin Veterinary Diet',
+  name: 'Diabetic (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['diabetic'],
+  isRx: true,
+  moisture: 8, protein: 44, fat: 11, fiber: 12,
+  kcalPerKg: 3345, kcalPerCup: 288,
+  highlight: 'High fiber slows glucose absorption; high protein (~47% DMB) supports lean muscle and satiety',
+  chewyPath: '/s?query=royal+canin+diabetic+dry+cat+food',
+});
+
+// ─── DOG — HYPOALLERGENIC ─────────────────────────────────────────────────────
+
+const hillsZdDog = food({
+  id: 'hills-zd-dog',
+  brand: "Hill's Prescription Diet",
+  name: 'z/d Skin/Food Sensitivities (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['hypoallergenic'],
+  isRx: true,
+  moisture: 10, protein: 15.9, fat: 13.5, fiber: 2.1,
+  kcalPerKg: 3620, kcalPerCup: 365,
+  highlight: 'Hydrolyzed single protein — peptides too small for the immune system to recognize, ending allergic reactions at the source',
+  chewyPath: '/s?query=hills+prescription+diet+zd+skin+food+sensitivities+dog+dry',
+});
+
+const purinaHADog = food({
+  id: 'purina-ha-dog',
+  brand: 'Purina Pro Plan Veterinary Diets',
+  name: 'HA Hydrolyzed (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['hypoallergenic'],
+  isRx: true,
+  moisture: 12, protein: 22, fat: 10, fiber: 2.5,
+  kcalPerKg: 3400, kcalPerCup: 322,
+  highlight: 'Hydrolyzed soy protein with a single carbohydrate (corn starch) — excellent for strict elimination diet trials',
+  chewyPath: '/s?query=purina+pro+plan+veterinary+HA+hydrolyzed+dog+dry',
+});
+
+const royalCaninHPDog = food({
+  id: 'rc-hp-dog',
+  brand: 'Royal Canin Veterinary Diet',
+  name: 'Hydrolyzed Protein Adult HP (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['hypoallergenic'],
+  isRx: true,
+  moisture: 9, protein: 22, fat: 15, fiber: 4,
+  kcalPerKg: 3660, kcalPerCup: 348,
+  highlight: 'Highly hydrolyzed poultry protein with low molecular weight — ideal when soy sensitivity is also suspected',
+  chewyPath: '/s?query=royal+canin+hydrolyzed+protein+adult+hp+dry+dog+food',
+});
+
+// ─── CAT — HYPOALLERGENIC ─────────────────────────────────────────────────────
+
+const hillsZdCat = food({
+  id: 'hills-zd-cat',
+  brand: "Hill's Prescription Diet",
+  name: 'z/d Skin/Food Sensitivities (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['hypoallergenic'],
+  isRx: true,
+  moisture: 10, protein: 22.1, fat: 14.4, fiber: 0.7,
+  kcalPerKg: 3881, kcalPerCup: 362,
+  highlight: 'Hydrolyzed single chicken protein — ends food-allergic reactions while maintaining calorie density for cats',
+  chewyPath: '/s?query=hills+prescription+diet+zd+skin+food+sensitivities+cat+dry',
+});
+
+const purinaHACat = food({
+  id: 'purina-ha-cat',
+  brand: 'Purina Pro Plan Veterinary Diets',
+  name: 'HA Hydrolyzed (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['hypoallergenic'],
+  isRx: true,
+  moisture: 12, protein: 38, fat: 13, fiber: 2,
+  kcalPerKg: 3575, kcalPerCup: 380,
+  highlight: 'Hydrolyzed soy protein with taurine supplementation — complete and balanced for cat-specific nutritional needs',
+  chewyPath: '/s?query=purina+pro+plan+veterinary+HA+hydrolyzed+cat+dry',
+});
+
 // ─── Full database ────────────────────────────────────────────────────────────
 
 export const DIET_RECOMMENDATIONS: RecommendedFood[] = [
@@ -470,6 +709,20 @@ export const DIET_RECOMMENDATIONS: RecommendedFood[] = [
   hillsSeniorCat,
   // Cat — urinary
   hillsUrinaryCat, royalCaninUrinaryCat,
+  // Dog — low-fat / pancreatitis
+  hillsIdLowFatDog, royalCaninGILowFatDog, purinaENLowFatDog,
+  // Dog — hepatic
+  hillsLdDog, royalCaninHepaticDog,
+  // Cat — hepatic
+  hillsLdCat, royalCaninHepaticCat,
+  // Dog — cardiac
+  hillsHdDog, royalCaninCardiacDog,
+  // Cat — diabetic
+  hillsMdCat, purinaDMCat, royalCaninDiabeticCat,
+  // Dog — hypoallergenic
+  hillsZdDog, purinaHADog, royalCaninHPDog,
+  // Cat — hypoallergenic
+  hillsZdCat, purinaHACat,
 ];
 
 /** Filter recommendations by species and one or more goals, up to maxCount results. */
