@@ -57,6 +57,19 @@ function food(
 
 // ─── DOG — WEIGHT LOSS ───────────────────────────────────────────────────────
 
+const hillsMetabolicDog = food({
+  id: 'hills-metabolic-dog',
+  brand: "Hill's Prescription Diet",
+  name: 'Metabolic Weight Management Chicken (Dog, Dry)',
+  species: 'dog', foodType: 'dry',
+  goals: ['weight-loss'],
+  isRx: true,
+  moisture: 10, protein: 27.8, fat: 11.2, fiber: 13.7, ash: 6.6,
+  kcalPerKg: 3230, kcalPerCup: 325,
+  highlight: 'Clinically proven — 88% of dogs lost weight at home; activates natural fat-burning metabolism',
+  chewyPath: '/s?query=hills+prescription+diet+metabolic+weight+management+dog+dry',
+});
+
 const hillsRdDog = food({
   id: 'hills-rd-dog',
   brand: "Hill's Prescription Diet",
@@ -251,6 +264,19 @@ const hillsSeniorDog = food({
 
 // ─── CAT — WEIGHT LOSS ───────────────────────────────────────────────────────
 
+const hillsMetabolicCat = food({
+  id: 'hills-metabolic-cat',
+  brand: "Hill's Prescription Diet",
+  name: 'Metabolic Weight Management Chicken (Cat, Dry)',
+  species: 'cat', foodType: 'dry',
+  goals: ['weight-loss'],
+  isRx: true,
+  moisture: 10, protein: 35.6, fat: 11.9, fiber: 12.6,
+  kcalPerKg: 3334, kcalPerCup: 293,
+  highlight: 'Clinically proven — 88% of cats lost weight at home; activates natural fat-burning metabolism',
+  chewyPath: '/s?query=hills+prescription+diet+metabolic+weight+management+cat+dry',
+});
+
 const hillsRdCat = food({
   id: 'hills-rd-cat',
   brand: "Hill's Prescription Diet",
@@ -420,8 +446,8 @@ const royalCaninUrinaryCat = food({
 // ─── Full database ────────────────────────────────────────────────────────────
 
 export const DIET_RECOMMENDATIONS: RecommendedFood[] = [
-  // Dog — weight loss
-  hillsRdDog, royalCaninSatietyDog, purinaOMDog, hillsPerfectWeightDog, purinaFocusWeightDog,
+  // Dog — weight loss (first 3 shown as recommendations: Metabolic, Purina OM, r/d)
+  hillsMetabolicDog, purinaOMDog, hillsRdDog, royalCaninSatietyDog, hillsPerfectWeightDog, purinaFocusWeightDog,
   // Dog — maintenance
   hillsAdultDog, purinaProPlanAdultDog,
   // Dog — weight gain
@@ -432,8 +458,8 @@ export const DIET_RECOMMENDATIONS: RecommendedFood[] = [
   hillsPuppyDog, hillsPuppyLargeBreedDog,
   // Dog — senior
   hillsSeniorDog,
-  // Cat — weight loss
-  hillsRdCat, royalCaninSatietyCat, purinaOMCat,
+  // Cat — weight loss (first 3 shown: Metabolic, Purina OM, r/d)
+  hillsMetabolicCat, purinaOMCat, hillsRdCat, royalCaninSatietyCat,
   // Cat — maintenance
   hillsAdultCat, purinaProPlanAdultCat,
   // Cat — kitten / weight gain
