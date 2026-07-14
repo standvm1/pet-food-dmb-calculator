@@ -1,3 +1,4 @@
+import { ShoppingBag } from 'lucide-react';
 import { getRecommendations, type DietGoal, type RecommendedFood } from '../data/dietRecommendations';
 import FoodRecommendationCard from './FoodRecommendationCard';
 
@@ -13,24 +14,34 @@ export default function FoodRecommendations({ species, goals, onUse, heading }: 
   if (foods.length === 0) return null;
 
   return (
-    <div className="mt-8">
-      <h3 className="text-sm font-semibold text-gray-700 mb-1">
-        {heading ?? 'Recommended diets'}
-      </h3>
-      <p className="text-xs text-gray-400 mb-3">
-        Filtered for {species}s · via Chewy
-      </p>
+    <div className="mt-8 rounded-2xl border-2 border-teal-100 bg-teal-50 p-5">
+      {/* Section header */}
+      <div className="flex items-center gap-3 mb-4">
+        <div className="p-2 bg-teal-600 rounded-xl flex-shrink-0">
+          <ShoppingBag className="w-4 h-4 text-white" />
+        </div>
+        <div>
+          <h3 className="font-bold text-gray-900 text-base">
+            {heading ?? 'Recommended Diets'}
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            Vet-curated for {species}s · Available on Chewy
+          </p>
+        </div>
+      </div>
 
-      <div className="bg-white rounded-xl border border-gray-100 shadow-sm px-5">
-        {foods.map(food => (
-          <FoodRecommendationCard key={food.id} food={food} onUse={onUse} />
+      {/* Cards */}
+      <div className="space-y-3">
+        {foods.map((food, i) => (
+          <FoodRecommendationCard key={food.id} food={food} rank={i + 1} onUse={onUse} />
         ))}
       </div>
 
-      <p className="text-xs text-gray-400 mt-2 leading-relaxed">
+      {/* Disclaimer */}
+      <p className="text-xs text-gray-400 mt-4 leading-relaxed">
         Atlas Veterinary Hospital may earn a commission from qualifying Chewy purchases at no extra cost to you.
         Rx diets require a prescription —{' '}
-        <a href="tel:9092226682" className="text-teal-600 hover:underline">call us</a> to discuss.
+        <a href="tel:9092226682" className="text-teal-600 hover:underline">call us at 909-222-6682</a> to discuss.
       </p>
     </div>
   );
