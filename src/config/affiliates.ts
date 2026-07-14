@@ -1,20 +1,23 @@
-// ─── Chewy Affiliate Program ────────────────────────────────────────────────
-// Sign up at: https://www.chewy.com/p/affiliate-program (managed via Impact)
-// Once approved, paste your Impact Publisher ID below.
-// All Chewy links on this site will automatically include your tracking params.
+// Chewy affiliate program via Impact Radius
+// Publisher ID: 8568126 | Campaign: 32975 | Catalog: 24727
+// Link format discovered from Impact catalog API responses
 
-export const CHEWY_AFFILIATE_ID = '8568126';
-
-// Impact Radius campaign tag (optional — customize in your Impact dashboard)
-const CAMPAIGN = 'atlas-vet-pet-food-calc';
+// Base for Impact-tracked Chewy links (publisher/creative/campaign IDs from Impact API)
+const IMPACT_BASE = 'https://chewy.sjv.io/c/7441793/3054490/32975';
 
 /**
- * Returns a Chewy product URL, appending affiliate tracking params when an
- * affiliate ID is configured. Pass a full path starting with '/'.
+ * Returns an Impact-tracked link to a chewy.com path.
+ * Pass a full path starting with '/' (e.g. '/dp/12345' or '/s?query=...').
  */
 export function chewyLink(path: string): string {
-  const base = `https://www.chewy.com${path}`;
-  if (!CHEWY_AFFILIATE_ID) return base;
-  const sep = path.includes('?') ? '&' : '?';
-  return `${base}${sep}irgwc=1&utm_source=affiliate&utm_medium=petfoodcalc&utm_campaign=${CAMPAIGN}&clickId=${CHEWY_AFFILIATE_ID}`;
+  const dest = encodeURIComponent(`https://www.chewy.com${path}`);
+  return `${IMPACT_BASE}?u=${dest}`;
+}
+
+/**
+ * Returns an Impact-tracked link to Chewy search results for a query.
+ */
+export function chewySearchLink(query: string): string {
+  const dest = encodeURIComponent(`https://www.chewy.com/s?query=${encodeURIComponent(query)}`);
+  return `${IMPACT_BASE}?u=${dest}`;
 }
