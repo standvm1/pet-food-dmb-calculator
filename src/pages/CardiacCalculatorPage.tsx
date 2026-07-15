@@ -4,10 +4,12 @@ import { Heart, CheckCircle, AlertTriangle, XCircle, Phone, Info } from 'lucide-
 import { Link } from 'react-router-dom';
 import FoodRecommendations from '../components/FoodRecommendations';
 import type { RecommendedFood } from '../data/dietRecommendations';
+import LabelScanner, { type ScanResult } from '../components/LabelScanner';
 
 type Species = 'dog' | 'cat';
 type WeightUnit = 'lbs' | 'kg';
 type AcvimStage = 'A' | 'B1' | 'B2' | 'C' | 'D';
+type CaloriesUnit = 'kcal/cup' | 'kcal/can' | 'kcal/kg';
 
 interface FormState {
   petName: string;
@@ -17,7 +19,8 @@ interface FormState {
   bcs: number;
   acvimStage: AcvimStage;
   sodiumMgPer100g: number | '';
-  kcalPerKg: number | '';
+  calories: number | '';
+  caloriesUnit: CaloriesUnit;
   isGrainFree: boolean;
   taurineAdded: boolean;
 }
@@ -46,26 +49,39 @@ const TIPS = [
 export default function CardiacCalculatorPage() {
   const [form, setForm] = useState<FormState>({
     petName: '', species: 'dog', weight: '', weightUnit: 'lbs', bcs: 5,
-    acvimStage: 'B1', sodiumMgPer100g: '', kcalPerKg: '', isGrainFree: false, taurineAdded: true,
+    acvimStage: 'B1', sodiumMgPer100g: '', calories: '', caloriesUnit: 'kcal/cup', isGrainFree: false, taurineAdded: true,
   });
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
   const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
+  function handleScan(r: ScanResult) {
+    setForm(f => ({
+      ...f,
+      ...(r.kcalPerCup !== null ? { calories: r.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
+          r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
+          r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
+    }));
+  }
+
   function handleUseFood(food: RecommendedFood) {
-    up('kcalPerKg', food.kcalPerKg);
+    if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
+    else if (food.kcalPerCan) { up('calories', food.kcalPerCan); up('caloriesUnit', 'kcal/can'); }
+    else { up('calories', food.kcalPerKg); up('caloriesUnit', 'kcal/kg'); }
     setLoadedFood(`${food.brand} ${food.name}`);
     setTimeout(() => setLoadedFood(null), 4000);
   }
 
   const hasWeight = form.weight !== '' && Number(form.weight) > 0;
-  const hasSodium = form.sodiumMgPer100g !== '' && form.kcalPerKg !== '';
+  const calorieInput = form.calories !== '' ? Number(form.calories) : null;
+  const effectiveKcalPerKg = form.caloriesUnit === 'kcal/kg' ? calorieInput : null;
+  const hasSodium = form.sodiumMgPer100g !== '' && effectiveKcalPerKg !== null;
 
   const weightKg = hasWeight ? (form.weightUnit === 'kg' ? Number(form.weight) : Number(form.weight) / 2.205) : 0;
   const ibwKg = weightKg > 0 ? idealKg(weightKg, form.bcs) : 0;
   const dailyKcal = ibwKg > 0 ? Math.round(rer(ibwKg) * 1.0) : 0;
 
   const sodiumPer100kcal = hasSodium
-    ? (Number(form.sodiumMgPer100g) * 1000 / Number(form.kcalPerKg))
+    ? (Number(form.sodiumMgPer100g) * 1000 / effectiveKcalPerKg!)
     : null;
 
   const stage = STAGE_INFO[form.acvimStage];
@@ -78,6 +94,22 @@ export default function CardiacCalculatorPage() {
   const dailySodium = hasWeight && hasSodium
     ? Math.round((dailyKcal / 100) * sodiumPer100kcal!)
     : null;
+
+  let feedAmt: number | null = null;
+  let feedUnit = '';
+  let feedLabel = '';
+  if (calorieInput && calorieInput > 0 && hasWeight && dailyKcal > 0) {
+    if (form.caloriesUnit === 'kcal/kg') {
+      feedAmt = Math.round((dailyKcal / calorieInput) * 1000);
+      feedUnit = 'g'; feedLabel = 'grams/day';
+    } else if (form.caloriesUnit === 'kcal/cup') {
+      feedAmt = dailyKcal / calorieInput;
+      feedUnit = 'cups'; feedLabel = 'cups/day';
+    } else {
+      feedAmt = dailyKcal / calorieInput;
+      feedUnit = 'cans'; feedLabel = 'cans/day';
+    }
+  }
 
   const petName = form.petName.trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
 
@@ -103,6 +135,8 @@ export default function CardiacCalculatorPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+
+        <LabelScanner onApply={handleScan} accentClass="focus:ring-rose-500" />
 
         {/* Patient */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
@@ -168,8 +202,15 @@ export default function CardiacCalculatorPage() {
               <input type="number" min="0" className={sl} value={form.sodiumMgPer100g} onChange={e => up('sodiumMgPer100g', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 300" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Calories (kcal/kg)</label>
-              <input type="number" min="0" className={sl} value={form.kcalPerKg} onChange={e => up('kcalPerKg', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 3500" />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Calories <span className="text-gray-400">use kcal/kg for sodium assessment</span></label>
+              <div className="flex gap-1.5">
+                <input type="number" min="0" className="flex-1 min-w-0 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white text-gray-900" value={form.calories} onChange={e => up('calories', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 350" />
+                <select className="w-20 px-2 py-3 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-rose-500 bg-white text-gray-700 shrink-0" value={form.caloriesUnit} onChange={e => up('caloriesUnit', e.target.value as CaloriesUnit)}>
+                  <option value="kcal/cup">/ cup</option>
+                  <option value="kcal/can">/ can</option>
+                  <option value="kcal/kg">/ kg</option>
+                </select>
+              </div>
             </div>
           </div>
           <div className="space-y-2">
@@ -201,7 +242,7 @@ export default function CardiacCalculatorPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
             <h2 className="font-semibold text-gray-800">Results for {petName} — ACVIM Stage {form.acvimStage}</h2>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="bg-rose-50 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-rose-700">{ibwKg.toFixed(1)} kg</div>
                 <div className="text-xs text-rose-600 mt-0.5">Ideal body weight</div>
@@ -210,6 +251,12 @@ export default function CardiacCalculatorPage() {
                 <div className="text-2xl font-bold text-gray-700">{dailyKcal}</div>
                 <div className="text-xs text-gray-500 mt-0.5">kcal/day target</div>
               </div>
+              {feedAmt !== null && (
+                <div className="bg-gray-50 rounded-xl p-4 text-center">
+                  <div className="text-2xl font-bold text-gray-700">{feedUnit === 'g' ? feedAmt : feedAmt.toFixed(1)} {feedUnit}</div>
+                  <div className="text-xs text-gray-500 mt-0.5">{feedLabel}</div>
+                </div>
+              )}
             </div>
 
             {/* Sodium stage guidance */}
@@ -282,6 +329,13 @@ export default function CardiacCalculatorPage() {
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
           <Phone className="w-4 h-4 flex-shrink-0" />
           <span>Heart disease requires regular monitoring and medication adjustment. <a href="tel:9092226682" className="font-semibold underline">Call Atlas Veterinary (909-222-6682)</a> if your pet is coughing, struggling to breathe, or exercising less.</span>
+        </div>
+
+        <div className="flex justify-end no-print">
+          <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Save as PDF
+          </button>
         </div>
 
         <div className="pt-2 border-t border-gray-100 text-sm text-gray-400 text-center">

@@ -4,6 +4,7 @@ import { Scale, ChevronDown, ChevronUp, Info, Phone, CheckCircle2 } from 'lucide
 import { Link } from 'react-router-dom';
 import BcsSelector from '../components/BcsSelector';
 import FoodRecommendations from '../components/FoodRecommendations';
+import LabelScanner, { type ScanResult } from '../components/LabelScanner';
 import { calculateFeeding } from '../utils/calculations';
 import type { FoodInput, ActivityLevel, LifeStage, CaloriesUnit } from '../types';
 import type { RecommendedFood, DietGoal } from '../data/dietRecommendations';
@@ -57,6 +58,25 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
   const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
 
+  function handleScan(r: ScanResult) {
+    setForm(f => ({
+      ...f,
+      ...(r.kcalPerKg !== null ? { kcalPerKg: r.kcalPerKg } : {}),
+      ...(r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
+          r.kcalPerCup !== null ? { calories: r.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
+          r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
+    }));
+    setShowCalories(true);
+    const calStr = r.kcalPerCup !== null ? `${r.kcalPerCup} kcal/cup`
+      : r.kcalPerCan !== null ? `${r.kcalPerCan} kcal/can`
+      : r.kcalPerKg  !== null ? `${r.kcalPerKg} kcal/kg`
+      : null;
+    if (calStr) {
+      setLoadedFood(`Label scanned — ${calStr}`);
+      setTimeout(() => setLoadedFood(null), 5000);
+    }
+  }
+
   function handleUseFood(food: RecommendedFood) {
     up('kcalPerKg', food.kcalPerKg);
     if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
@@ -98,8 +118,9 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
 
   function formatAmount(s: { kcalPerDay: number; gramsPerDay: number | null; unitsPerDay: number | null }): string {
     if (!feedingResult) return '';
+    if (s.unitsPerDay !== null && form.caloriesUnit !== 'kcal/kg') return `${s.unitsPerDay.toFixed(1)} ${feedingResult.unitLabel}/day`;
     if (s.gramsPerDay !== null) return `${Math.round(s.gramsPerDay)} g/day`;
-    if (s.unitsPerDay !== null) return `${s.unitsPerDay.toFixed(2)} ${feedingResult.unitLabel}`;
+    if (s.unitsPerDay !== null) return `${s.unitsPerDay.toFixed(1)} ${feedingResult.unitLabel}/day`;
     return `${s.kcalPerDay} kcal/day`;
   }
 
@@ -132,6 +153,8 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
             </div>
           </div>
         )}
+
+        <LabelScanner onApply={handleScan} accentClass="focus:ring-teal-500" />
 
         <div className="grid lg:grid-cols-5 gap-8">
           {/* ── Form ── */}
@@ -367,7 +390,11 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
                           <div className={`font-bold text-sm ${row.color}`}>{row.s.kcalPerDay} kcal/day</div>
                           {(row.s.gramsPerDay !== null || row.s.unitsPerDay !== null) && (
                             <div className="text-xs text-gray-500">
-                              {row.s.gramsPerDay !== null ? `${Math.round(row.s.gramsPerDay)} g/day` : `${row.s.unitsPerDay?.toFixed(2)} ${feedingResult.unitLabel}`}
+                              {form.caloriesUnit !== 'kcal/kg' && row.s.unitsPerDay !== null
+                            ? `${row.s.unitsPerDay.toFixed(1)} ${feedingResult.unitLabel}/day`
+                            : row.s.gramsPerDay !== null
+                            ? `${Math.round(row.s.gramsPerDay)} g/day`
+                            : `${row.s.unitsPerDay?.toFixed(1)} ${feedingResult.unitLabel}/day`}
                             </div>
                           )}
                         </div>
@@ -400,8 +427,16 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
                   </div>
                 )}
 
+                {/* PDF */}
+                <div className="flex justify-end no-print">
+                  <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                    Save as PDF
+                  </button>
+                </div>
+
                 {/* CTA */}
-                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4">
+                <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-5 flex items-center gap-4 no-print">
                   <div className="text-3xl flex-shrink-0">🏥</div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-semibold text-gray-900">Questions about your pet's diet?</p>

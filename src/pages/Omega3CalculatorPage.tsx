@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { Fish, Info, Phone, AlertTriangle } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import LabelScanner from '../components/LabelScanner';
 
 type Species = 'dog' | 'cat';
 type WeightUnit = 'lbs' | 'kg';
@@ -80,6 +81,8 @@ export default function Omega3CalculatorPage() {
       </div>
 
       <div className="max-w-3xl mx-auto px-4 py-8 space-y-6">
+
+        <LabelScanner accentClass="focus:ring-teal-500" />
 
         {/* Inputs */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
@@ -196,6 +199,13 @@ export default function Omega3CalculatorPage() {
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
           <Phone className="w-4 h-4 flex-shrink-0" />
           <span>Questions about omega-3 supplements for your pet? <a href="tel:9092226682" className="font-semibold underline">Call Atlas Veterinary (909-222-6682)</a> — we can recommend the right product and dose.</span>
+        </div>
+
+        <div className="flex justify-end no-print">
+          <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+            Save as PDF
+          </button>
         </div>
 
         <div className="pt-2 border-t border-gray-100 text-sm text-gray-400 text-center">

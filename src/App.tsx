@@ -21,6 +21,7 @@ import CardiacCalculatorPage from './pages/CardiacCalculatorPage';
 import UrinaryCalculatorPage from './pages/UrinaryCalculatorPage';
 import Omega3CalculatorPage from './pages/Omega3CalculatorPage';
 import EliminationDietPage from './pages/EliminationDietPage';
+import ContactPage from './pages/ContactPage';
 
 export default function App() {
   return (
@@ -49,6 +50,7 @@ export default function App() {
               <Route path="/urinary-calculator" element={<UrinaryCalculatorPage />} />
               <Route path="/omega3-calculator" element={<Omega3CalculatorPage />} />
               <Route path="/elimination-diet" element={<EliminationDietPage />} />
+              <Route path="/contact" element={<ContactPage />} />
             </Routes>
           </main>
           <Footer />

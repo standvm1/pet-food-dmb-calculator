@@ -3,6 +3,7 @@ import { ArrowLeftRight, ChevronRight, FlaskConical, Scale, TrendingDown, Trendi
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import CalculatorForm, { defaultFood } from '../components/CalculatorForm';
+import LabelScanner, { type ScanResult } from '../components/LabelScanner';
 import ResultsTable from '../components/ResultsTable';
 import ComparisonSummary from '../components/ComparisonSummary';
 import Disclaimer from '../components/Disclaimer';
@@ -55,6 +56,20 @@ export default function Home() {
     }, 100);
   }, [searchParams, setSearchParams]);
   const [foodB, setFoodB] = useState<FoodInput>(defaultFood());
+
+  function handleScan(r: ScanResult) {
+    setFoodA(f => ({
+      ...f,
+      ...(r.protein !== null ? { protein: r.protein } : {}),
+      ...(r.fat !== null ? { fat: r.fat } : {}),
+      ...(r.fiber !== null ? { fiber: r.fiber } : {}),
+      ...(r.moisture !== null ? { moisture: r.moisture } : {}),
+      ...(r.ash !== null ? { ash: r.ash } : {}),
+      ...(r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as const } :
+          r.kcalPerCup !== null ? { calories: r.kcalPerCup, caloriesUnit: 'kcal/cup' as const } :
+          r.kcalPerKg !== null  ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as const } : {}),
+    }));
+  }
   const [resultA, setResultA] = useState<DMBResult | null>(null);
   const [resultB, setResultB] = useState<DMBResult | null>(null);
   const [compareMode, setCompareMode] = useState(false);
@@ -174,6 +189,10 @@ export default function Home() {
                     <ArrowLeftRight className="w-4 h-4" />
                     {compareMode ? 'Comparing A & B' : 'Compare Two Foods'}
                   </button>
+                </div>
+
+                <div className={`${compareMode ? '' : 'max-w-2xl mx-auto w-full'}`}>
+                  <LabelScanner onApply={handleScan} />
                 </div>
 
                 <div className={`grid gap-6 ${compareMode ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>

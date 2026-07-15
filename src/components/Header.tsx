@@ -179,6 +179,17 @@ export default function Header() {
             >
               Food Search
             </Link>
+
+            <Link
+              to="/contact"
+              className={`px-4 py-2 rounded-lg text-sm font-semibold transition-colors ${
+                location.pathname === '/contact'
+                  ? 'bg-teal-600 text-white'
+                  : 'bg-teal-50 text-teal-700 hover:bg-teal-100'
+              }`}
+            >
+              Subscribe Free
+            </Link>
           </nav>
 
           {/* CTA + Mobile menu button */}
@@ -211,6 +222,7 @@ export default function Header() {
               ...conditionLinks.map(l => ({ to: l.to, label: l.label })),
               ...learnLinks,
               { to: '/food-search', label: 'Food Search' },
+              { to: '/contact', label: '✉️ Subscribe Free' },
             ].map(link => (
               <Link
                 key={link.to}
