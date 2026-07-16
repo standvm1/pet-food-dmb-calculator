@@ -241,6 +241,12 @@ export default function LabelScanner({ onApply, accentClass = 'focus:ring-teal-4
                 <p className="text-xs text-gray-500 italic text-center py-2">No values could be read — try a clearer, well-lit photo.</p>
               )}
 
+              {hasValues && result.phosphorus === null && (
+                <p className="text-xs text-amber-700 bg-amber-50 rounded-lg px-3 py-2">
+                  Phosphorus not found on this label — look for "Phosphorus X%" in the Guaranteed Analysis and enter it manually in the calculator.
+                </p>
+              )}
+
               <div className="flex items-center gap-2">
                 {hasValues && onApply && !applied && (
                   <button

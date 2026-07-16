@@ -55,18 +55,18 @@ exports.handler = async (event) => {
               type: 'text',
               text: `This is a photo of a pet food label. Find the "Guaranteed Analysis" section and extract the nutritional values.
 
-Return ONLY a valid JSON object with exactly these fields (numbers only, no % signs; use null if a value is not visible or not listed):
+Return ONLY a valid JSON object with exactly these fields (use the numeric value only — no % signs, no units; use null if a value is not visible):
 {
-  "protein": <crude protein minimum % as a decimal number>,
-  "fat": <crude fat minimum % as a decimal number>,
-  "fiber": <crude fiber maximum % as a decimal number>,
-  "moisture": <moisture maximum % as a decimal number>,
-  "ash": <crude ash % if explicitly listed, otherwise null>,
-  "phosphorus": <crude phosphorus minimum % if listed in guaranteed analysis, otherwise null>,
-  "kcalPerKg": <metabolizable energy kcal/kg if listed in calorie statement, otherwise null>,
-  "kcalPerCup": <kcal per cup (8oz) if listed, otherwise null>,
-  "kcalPerCan": <kcal per can/pouch if listed, otherwise null>,
-  "confidence": <"high" if values are clearly readable, "medium" if image is angled or partially blurry, "low" if you are uncertain>
+  "protein": <crude protein % — labeled "Crude Protein (min)" or similar>,
+  "fat": <crude fat % — labeled "Crude Fat (min)" or similar>,
+  "fiber": <crude fiber % — labeled "Crude Fiber (max)" or similar>,
+  "moisture": <moisture % — labeled "Moisture (max)" or similar>,
+  "ash": <crude ash % if listed, otherwise null>,
+  "phosphorus": <phosphorus % — look for any line containing "Phosphorus" or "Phos" anywhere in the guaranteed analysis, it may say min OR max, e.g. "Phosphorus (min) 0.19%" → return 0.19; if not found return null>,
+  "kcalPerKg": <kcal/kg from the calorie statement, e.g. "3,500 kcal/kg" → return 3500, otherwise null>,
+  "kcalPerCup": <kcal per cup from calorie statement, e.g. "395 kcal/cup" → return 395, otherwise null>,
+  "kcalPerCan": <kcal per can or pouch from calorie statement, otherwise null>,
+  "confidence": <"high" if values are clearly readable, "medium" if image is angled or partially blurry, "low" if very uncertain>
 }
 
 Return only the JSON object. No explanation, no markdown, no code blocks.`,
