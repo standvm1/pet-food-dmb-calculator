@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Shield, AlertTriangle, Info, Phone, CheckCircle } from 'lucide-react';
+import { Shield, AlertTriangle, Info, Phone, CheckCircle, Calculator, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FoodRecommendations from '../components/FoodRecommendations';
 import type { RecommendedFood } from '../data/dietRecommendations';
@@ -58,8 +58,16 @@ export default function HepaticCalculatorPage() {
     petName: '', species: 'dog', weight: '', weightUnit: 'lbs', bcs: 5,
     breed: '', heRisk: false, calories: '', caloriesUnit: 'kcal/cup',
   });
+  const [snapshot, setSnapshot] = useState<FormState | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
-  const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  const up = (k: keyof FormState, v: unknown) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (snapshot) setIsDirty(true);
+  };
+
+  function handleCalculate() { setSnapshot({ ...form }); setIsDirty(false); }
 
   function handleScan(r: ScanResult) {
     setForm(f => ({
@@ -68,35 +76,41 @@ export default function HepaticCalculatorPage() {
           r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
           r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
     }));
+    if (snapshot) setIsDirty(true);
   }
 
   function handleUseFood(food: RecommendedFood) {
-    if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
-    else if (food.kcalPerCan) { up('calories', food.kcalPerCan); up('caloriesUnit', 'kcal/can'); }
-    else { up('calories', food.kcalPerKg); up('caloriesUnit', 'kcal/kg'); }
-    up('heRisk', false);
+    setForm(f => ({
+      ...f,
+      heRisk: false,
+      ...(food.kcalPerCup ? { calories: food.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
+          food.kcalPerCan ? { calories: food.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
+                            { calories: food.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit }),
+    }));
+    if (snapshot) setIsDirty(true);
     setLoadedFood(`${food.brand} ${food.name}`);
     setTimeout(() => setLoadedFood(null), 4000);
   }
 
-  const hasWeight = form.weight !== '' && Number(form.weight) > 0;
-  const weightKg = hasWeight ? (form.weightUnit === 'kg' ? Number(form.weight) : Number(form.weight) / 2.205) : 0;
-  const ibwKg = weightKg > 0 ? idealKg(weightKg, form.bcs) : 0;
+  const s = snapshot;
+  const sHasWeight = s !== null && s.weight !== '' && Number(s.weight) > 0;
+  const weightKg = sHasWeight ? (s!.weightUnit === 'kg' ? Number(s!.weight) : Number(s!.weight) / 2.205) : 0;
+  const ibwKg = weightKg > 0 ? idealKg(weightKg, s!.bcs) : 0;
   const dailyKcal = ibwKg > 0 ? Math.round(rer(ibwKg) * 1.2) : 0;
 
-  const proteinRange = PROTEIN_TARGETS[form.species][form.heRisk ? 'he' : 'noHe'];
+  const proteinRange = PROTEIN_TARGETS[s?.species ?? form.species][(s?.heRisk ?? false) ? 'he' : 'noHe'];
   const minProtein = ibwKg > 0 ? Math.round(proteinRange[0] * ibwKg) : null;
   const maxProtein = ibwKg > 0 ? Math.round(proteinRange[1] * ibwKg) : null;
 
-  const calorieInput = form.calories !== '' ? Number(form.calories) : null;
+  const calorieInput = s && s.calories !== '' ? Number(s.calories) : null;
   let feedAmt: number | null = null;
   let feedUnit = '';
   let feedLabel = '';
-  if (calorieInput && calorieInput > 0 && hasWeight && dailyKcal > 0) {
-    if (form.caloriesUnit === 'kcal/kg') {
+  if (calorieInput && calorieInput > 0 && sHasWeight && dailyKcal > 0) {
+    if (s!.caloriesUnit === 'kcal/kg') {
       feedAmt = Math.round((dailyKcal / calorieInput) * 1000);
       feedUnit = 'g'; feedLabel = 'grams/day';
-    } else if (form.caloriesUnit === 'kcal/cup') {
+    } else if (s!.caloriesUnit === 'kcal/cup') {
       feedAmt = dailyKcal / calorieInput;
       feedUnit = 'cups'; feedLabel = 'cups/day';
     } else {
@@ -105,10 +119,11 @@ export default function HepaticCalculatorPage() {
     }
   }
 
-  const isCopperBreed = form.breed.trim().length > 0 &&
-    COPPER_BREEDS.some(b => form.breed.toLowerCase().includes(b));
+  const isCopperBreed = (s?.breed ?? '').trim().length > 0 &&
+    COPPER_BREEDS.some(b => (s?.breed ?? '').toLowerCase().includes(b));
 
-  const petName = form.petName.trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
+  const canCalculate = form.weight !== '' && Number(form.weight) > 0;
+  const petName = (s?.petName ?? form.petName).trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
 
   return (
     <>
@@ -200,8 +215,24 @@ export default function HepaticCalculatorPage() {
           </div>
         </div>
 
+        {/* Calculate button */}
+        <div className="space-y-3">
+          <button type="button" onClick={handleCalculate} disabled={!canCalculate}
+            className="w-full flex items-center justify-center gap-2.5 bg-amber-500 hover:bg-amber-600 active:bg-amber-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-base px-6 py-4 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-amber-400 focus:ring-offset-2">
+            <Calculator className="w-5 h-5" />
+            {snapshot ? 'Recalculate' : 'Calculate Hepatic Diet Plan'}
+          </button>
+          {!canCalculate && <p className="text-xs text-center text-gray-400">Enter your pet's weight above to calculate</p>}
+          {snapshot && isDirty && (
+            <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 text-sm text-amber-800">
+              <RefreshCw className="w-4 h-4 flex-shrink-0" />
+              Inputs changed — click <strong className="mx-1">Recalculate</strong> to update results.
+            </div>
+          )}
+        </div>
+
         {/* Results */}
-        {hasWeight && (
+        {snapshot && !isDirty && sHasWeight && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
             <h2 className="font-semibold text-gray-800">Results for {petName}</h2>
 
@@ -229,19 +260,19 @@ export default function HepaticCalculatorPage() {
               )}
             </div>
 
-            <div className={`rounded-xl p-4 border ${form.heRisk ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
+            <div className={`rounded-xl p-4 border ${s!.heRisk ? 'bg-red-50 border-red-200' : 'bg-green-50 border-green-200'}`}>
               <div className="flex items-start gap-3">
-                {form.heRisk
+                {s!.heRisk
                   ? <AlertTriangle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
                   : <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
                 }
                 <div>
                   <div className="font-semibold text-sm text-gray-800">
                     Protein target: {proteinRange[0]}–{proteinRange[1]} g/kg IBW/day
-                    {form.heRisk ? ' (HE restriction)' : ' (standard hepatic)'}
+                    {s!.heRisk ? ' (HE restriction)' : ' (standard hepatic)'}
                   </div>
                   <div className="text-xs text-gray-600 mt-0.5 leading-relaxed">
-                    {form.heRisk
+                    {s!.heRisk
                       ? 'Ammonia-producing protein is restricted to reduce neurological signs. Use vegetable or dairy protein sources when possible. Frequent small meals help spread the protein load.'
                       : 'Standard hepatic diet — moderate protein quality, not severely restricted. High biological value protein (eggs, poultry) is preferred to minimize ammonia production.'
                     }
@@ -264,7 +295,7 @@ export default function HepaticCalculatorPage() {
                   <div>
                     <div className="font-semibold text-sm text-gray-900">Copper-associated hepatopathy risk detected</div>
                     <div className="text-xs text-gray-700 mt-0.5 leading-relaxed">
-                      {form.breed} is a breed predisposed to copper storage hepatopathy. Avoid foods with organ meats, shellfish, or copper supplementation. Ask your vet about liver biopsy and copper quantification if not already done.
+                      {s!.breed} is a breed predisposed to copper storage hepatopathy. Avoid foods with organ meats, shellfish, or copper supplementation. Ask your vet about liver biopsy and copper quantification if not already done.
                     </div>
                   </div>
                 </div>

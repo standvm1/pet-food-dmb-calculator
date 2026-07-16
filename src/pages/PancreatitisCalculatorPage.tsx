@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Flame, CheckCircle, AlertTriangle, XCircle, Phone } from 'lucide-react';
+import { Flame, CheckCircle, AlertTriangle, XCircle, Phone, Calculator, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FoodRecommendations from '../components/FoodRecommendations';
 import type { RecommendedFood } from '../data/dietRecommendations';
@@ -48,8 +48,16 @@ export default function PancreatitisCalculatorPage() {
     petName: '', species: 'dog', weight: '', weightUnit: 'lbs', bcs: 5,
     severity: 'moderate', fat: '', moisture: '', calories: '', caloriesUnit: 'kcal/cup',
   });
+  const [snapshot, setSnapshot] = useState<FormState | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
-  const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  const up = (k: keyof FormState, v: unknown) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (snapshot) setIsDirty(true);
+  };
+
+  function handleCalculate() { setSnapshot({ ...form }); setIsDirty(false); }
 
   function handleScan(r: ScanResult) {
     setForm(f => ({
@@ -60,41 +68,46 @@ export default function PancreatitisCalculatorPage() {
           r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
           r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
     }));
+    if (snapshot) setIsDirty(true);
   }
 
   function handleUseFood(food: RecommendedFood) {
-    if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
-    else if (food.kcalPerCan) { up('calories', food.kcalPerCan); up('caloriesUnit', 'kcal/can'); }
-    else { up('calories', food.kcalPerKg); up('caloriesUnit', 'kcal/kg'); }
-    up('moisture', food.moisture);
-    up('fat', food.fat);
+    setForm(f => ({
+      ...f,
+      fat: food.fat, moisture: food.moisture,
+      ...(food.kcalPerCup ? { calories: food.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
+          food.kcalPerCan ? { calories: food.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
+                            { calories: food.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit }),
+    }));
+    if (snapshot) setIsDirty(true);
     setLoadedFood(`${food.brand} ${food.name}`);
     setTimeout(() => setLoadedFood(null), 4000);
   }
 
-  const hasWeight = form.weight !== '' && Number(form.weight) > 0;
-  const hasNutrition = form.fat !== '' && form.moisture !== '';
+  const s = snapshot;
+  const sHasWeight = s !== null && s.weight !== '' && Number(s.weight) > 0;
+  const sHasNutrition = s !== null && s.fat !== '' && s.moisture !== '';
 
-  const weightKg = hasWeight ? (form.weightUnit === 'kg' ? Number(form.weight) : Number(form.weight) / 2.205) : 0;
-  const ibwKg = weightKg > 0 ? idealKg(weightKg, form.bcs) : 0;
+  const weightKg = sHasWeight ? (s!.weightUnit === 'kg' ? Number(s!.weight) : Number(s!.weight) / 2.205) : 0;
+  const ibwKg = weightKg > 0 ? idealKg(weightKg, s!.bcs) : 0;
   const dailyKcal = ibwKg > 0 ? Math.round(rer(ibwKg)) : 0;
 
-  const fat = Number(form.fat);
-  const moisture = Number(form.moisture);
-  const calorieInput = form.calories !== '' ? Number(form.calories) : null;
-  const effectiveKcalPerKg = form.caloriesUnit === 'kcal/kg' ? calorieInput : null;
+  const fat = sHasNutrition ? Number(s!.fat) : 0;
+  const moisture = sHasNutrition ? Number(s!.moisture) : 0;
+  const calorieInput = s && s.calories !== '' ? Number(s.calories) : null;
+  const effectiveKcalPerKg = s && s.caloriesUnit === 'kcal/kg' ? calorieInput : null;
 
-  const fatDMB = hasNutrition ? (fat / (100 - moisture)) * 100 : null;
-  const fatG1000 = hasNutrition && effectiveKcalPerKg && effectiveKcalPerKg > 0 ? (fat * 10 / effectiveKcalPerKg) * 1000 : null;
+  const fatDMB = sHasNutrition ? (fat / (100 - moisture)) * 100 : null;
+  const fatG1000 = sHasNutrition && effectiveKcalPerKg && effectiveKcalPerKg > 0 ? (fat * 10 / effectiveKcalPerKg) * 1000 : null;
 
   let feedAmt: number | null = null;
   let feedUnit = '';
   let feedLabel = '';
-  if (calorieInput && calorieInput > 0 && hasWeight && dailyKcal > 0) {
-    if (form.caloriesUnit === 'kcal/kg') {
+  if (calorieInput && calorieInput > 0 && sHasWeight && dailyKcal > 0) {
+    if (s!.caloriesUnit === 'kcal/kg') {
       feedAmt = Math.round((dailyKcal / calorieInput) * 1000);
       feedUnit = 'g'; feedLabel = 'grams/day';
-    } else if (form.caloriesUnit === 'kcal/cup') {
+    } else if (s!.caloriesUnit === 'kcal/cup') {
       feedAmt = dailyKcal / calorieInput;
       feedUnit = 'cups'; feedLabel = 'cups/day';
     } else {
@@ -103,7 +116,7 @@ export default function PancreatitisCalculatorPage() {
     }
   }
 
-  const target = FAT_TARGETS[form.severity];
+  const target = FAT_TARGETS[s?.severity ?? form.severity];
 
   function fatDmbStatus() {
     if (fatDMB === null) return null;
@@ -120,7 +133,8 @@ export default function PancreatitisCalculatorPage() {
 
   const dmbStatus = fatDmbStatus();
   const g1000Status = fatG1000Status();
-  const petName = form.petName.trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
+  const canCalculate = form.weight !== '' && Number(form.weight) > 0;
+  const petName = (s?.petName ?? form.petName).trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
 
   function statusIcon(s: 'ok' | 'warn' | 'high' | null) {
     if (s === 'ok') return <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />;
@@ -246,23 +260,41 @@ export default function PancreatitisCalculatorPage() {
           )}
         </div>
 
+        {/* Calculate button */}
+        <div className="space-y-3">
+          <button type="button" onClick={handleCalculate} disabled={!canCalculate}
+            className="w-full flex items-center justify-center gap-2.5 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-base px-6 py-4 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2">
+            <Calculator className="w-5 h-5" />
+            {snapshot ? 'Recalculate' : 'Calculate Low-Fat Assessment'}
+          </button>
+          {!canCalculate && <p className="text-xs text-center text-gray-400">Enter your pet's weight above to calculate</p>}
+          {snapshot && isDirty && (
+            <div className="flex items-center gap-2 bg-orange-50 border border-orange-200 rounded-xl px-4 py-3 text-sm text-orange-800">
+              <RefreshCw className="w-4 h-4 flex-shrink-0" />
+              Inputs changed — click <strong className="mx-1">Recalculate</strong> to update results.
+            </div>
+          )}
+        </div>
+
         {/* Results */}
-        {hasNutrition && fatDMB !== null && (
+        {snapshot && !isDirty && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
             <h2 className="font-semibold text-gray-800">Results for {petName}</h2>
 
-            <div className={`rounded-xl p-4 border ${statusBg(dmbStatus)}`}>
-              <div className="flex items-start gap-3">
-                {statusIcon(dmbStatus)}
-                <div>
-                  <div className="text-2xl font-bold text-gray-900">{fatDMB.toFixed(1)}% fat DMB</div>
-                  <div className="text-xs text-gray-600 mt-0.5">
-                    Target &lt;{target.dmb}% fat DMB for {form.severity} restriction:&nbsp;
-                    {dmbStatus === 'ok' ? '✓ Within target' : dmbStatus === 'warn' ? '⚠️ Slightly above target' : '✗ Above target — this food is too high in fat'}
+            {sHasNutrition && fatDMB !== null && (
+              <div className={`rounded-xl p-4 border ${statusBg(dmbStatus)}`}>
+                <div className="flex items-start gap-3">
+                  {statusIcon(dmbStatus)}
+                  <div>
+                    <div className="text-2xl font-bold text-gray-900">{fatDMB.toFixed(1)}% fat DMB</div>
+                    <div className="text-xs text-gray-600 mt-0.5">
+                      Target &lt;{target.dmb}% fat DMB for {s!.severity} restriction:&nbsp;
+                      {dmbStatus === 'ok' ? '✓ Within target' : dmbStatus === 'warn' ? '⚠️ Slightly above target' : '✗ Above target — this food is too high in fat'}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {fatG1000 !== null && (
               <div className={`rounded-xl p-4 border ${statusBg(g1000Status)}`}>
@@ -279,7 +311,7 @@ export default function PancreatitisCalculatorPage() {
               </div>
             )}
 
-            {hasWeight && (
+            {sHasWeight && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="bg-orange-50 rounded-xl p-4 text-center">
                   <div className="text-2xl font-bold text-orange-700">{ibwKg.toFixed(1)} kg</div>

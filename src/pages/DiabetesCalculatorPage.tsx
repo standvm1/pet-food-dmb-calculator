@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Activity, CheckCircle, AlertTriangle, XCircle, Phone, Info } from 'lucide-react';
+import { Activity, CheckCircle, AlertTriangle, XCircle, Phone, Info, Calculator, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FoodRecommendations from '../components/FoodRecommendations';
 import type { RecommendedFood } from '../data/dietRecommendations';
@@ -25,6 +25,11 @@ interface FormState {
   caloriesUnit: CaloriesUnit;
 }
 
+const INIT: FormState = {
+  petName: '', species: 'cat', weight: '', weightUnit: 'lbs', bcs: 6,
+  protein: '', fat: '', fiber: '', ash: '', moisture: '', calories: '', caloriesUnit: 'kcal/cup',
+};
+
 const sl = 'w-full px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white text-gray-900';
 
 function idealKg(weightKg: number, bcs: number) { return weightKg / (1 + (bcs - 5) * 0.1); }
@@ -39,12 +44,17 @@ const TIPS = [
 ];
 
 export default function DiabetesCalculatorPage() {
-  const [form, setForm] = useState<FormState>({
-    petName: '', species: 'cat', weight: '', weightUnit: 'lbs', bcs: 6,
-    protein: '', fat: '', fiber: '', ash: '', moisture: '', calories: '', caloriesUnit: 'kcal/cup',
-  });
+  const [form, setForm] = useState<FormState>(INIT);
+  const [snapshot, setSnapshot] = useState<FormState | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
-  const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  const up = (k: keyof FormState, v: unknown) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (snapshot) setIsDirty(true);
+  };
+
+  function handleCalculate() { setSnapshot({ ...form }); setIsDirty(false); }
 
   function handleScan(r: ScanResult) {
     setForm(f => ({
@@ -58,27 +68,31 @@ export default function DiabetesCalculatorPage() {
           r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
           r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
     }));
+    if (snapshot) setIsDirty(true);
   }
 
   function handleUseFood(food: RecommendedFood) {
-    if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
-    else if (food.kcalPerCan) { up('calories', food.kcalPerCan); up('caloriesUnit', 'kcal/can'); }
-    else { up('calories', food.kcalPerKg); up('caloriesUnit', 'kcal/kg'); }
-    up('moisture', food.moisture);
-    up('protein', food.protein);
-    up('fat', food.fat);
-    up('fiber', food.fiber);
+    setForm(f => ({
+      ...f,
+      moisture: food.moisture, protein: food.protein, fat: food.fat, fiber: food.fiber,
+      ...(food.kcalPerCup ? { calories: food.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
+          food.kcalPerCan ? { calories: food.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
+                            { calories: food.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit }),
+    }));
+    if (snapshot) setIsDirty(true);
     setLoadedFood(`${food.brand} ${food.name}`);
     setTimeout(() => setLoadedFood(null), 4000);
   }
 
-  const hasWeight = form.weight !== '' && Number(form.weight) > 0;
-  const hasNutrition = form.protein !== '' && form.fat !== '' && form.fiber !== '' && form.moisture !== '';
+  // All results from snapshot
+  const s = snapshot;
+  const sHasWeight = s !== null && s.weight !== '' && Number(s.weight) > 0;
+  const sHasNutrition = s !== null && s.protein !== '' && s.fat !== '' && s.fiber !== '' && s.moisture !== '';
 
-  const weightKg = hasWeight ? (form.weightUnit === 'kg' ? Number(form.weight) : Number(form.weight) / 2.205) : 0;
-  const ibwKg = weightKg > 0 ? idealKg(weightKg, form.bcs) : 0;
+  const weightKg = sHasWeight ? (s!.weightUnit === 'kg' ? Number(s!.weight) : Number(s!.weight) / 2.205) : 0;
+  const ibwKg = weightKg > 0 ? idealKg(weightKg, s!.bcs) : 0;
   const rerKcal = ibwKg > 0 ? rer(ibwKg) : 0;
-  const multiplier = form.species === 'cat' ? 1.0 : 1.4;
+  const multiplier = s?.species === 'cat' ? 1.0 : 1.4;
   const dailyKcal = Math.round(rerKcal * multiplier);
 
   let carbsDMB: number | null = null;
@@ -86,39 +100,36 @@ export default function DiabetesCalculatorPage() {
   let catRating: 'ideal' | 'good' | 'high' | null = null;
   let dogRating: 'ideal' | 'moderate' | 'high' | null = null;
 
-  if (hasNutrition) {
-    const p = Number(form.protein), f = Number(form.fat), fi = Number(form.fiber);
-    const ash = form.ash !== '' ? Number(form.ash) : 6;
-    const m = Number(form.moisture);
+  if (sHasNutrition) {
+    const p = Number(s!.protein), f = Number(s!.fat), fi = Number(s!.fiber);
+    const ash = s!.ash !== '' ? Number(s!.ash) : 6;
+    const m = Number(s!.moisture);
     carbsAF = Math.max(0, 100 - p - f - fi - ash - m);
     const dm = 100 - m;
     carbsDMB = (carbsAF / dm) * 100;
-
-    if (form.species === 'cat') {
+    if (s!.species === 'cat') {
       catRating = carbsDMB < 10 ? 'ideal' : carbsDMB < 15 ? 'good' : 'high';
     } else {
       dogRating = carbsDMB < 25 ? 'ideal' : carbsDMB < 35 ? 'moderate' : 'high';
     }
   }
 
-  const calorieInput = form.calories !== '' ? Number(form.calories) : null;
+  const calorieInput = s && s.calories !== '' ? Number(s.calories) : null;
   let feedAmt: number | null = null;
   let feedUnit = '';
   let feedLabel = '';
-  if (calorieInput && calorieInput > 0 && hasWeight && dailyKcal > 0) {
-    if (form.caloriesUnit === 'kcal/kg') {
-      feedAmt = Math.round((dailyKcal / calorieInput) * 1000);
-      feedUnit = 'g'; feedLabel = 'grams/day';
-    } else if (form.caloriesUnit === 'kcal/cup') {
-      feedAmt = dailyKcal / calorieInput;
-      feedUnit = 'cups'; feedLabel = 'cups/day';
+  if (calorieInput && calorieInput > 0 && sHasWeight && dailyKcal > 0) {
+    if (s!.caloriesUnit === 'kcal/kg') {
+      feedAmt = Math.round((dailyKcal / calorieInput) * 1000); feedUnit = 'g'; feedLabel = 'grams/day';
+    } else if (s!.caloriesUnit === 'kcal/cup') {
+      feedAmt = dailyKcal / calorieInput; feedUnit = 'cups'; feedLabel = 'cups/day';
     } else {
-      feedAmt = dailyKcal / calorieInput;
-      feedUnit = 'cans'; feedLabel = 'cans/day';
+      feedAmt = dailyKcal / calorieInput; feedUnit = 'cans'; feedLabel = 'cans/day';
     }
   }
 
-  const petName = form.petName.trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
+  const canCalculate = form.weight !== '' && Number(form.weight) > 0;
+  const petName = (s?.petName ?? form.petName).trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
 
   return (
     <>
@@ -188,8 +199,7 @@ export default function DiabetesCalculatorPage() {
 
         {/* Food label */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h2 className="font-semibold text-gray-800">Food Label (Guaranteed Analysis)</h2>
-          <p className="text-xs text-gray-500">Enter as-fed values below. Carbohydrates are calculated automatically.</p>
+          <h2 className="font-semibold text-gray-800">Food Label <span className="text-xs font-normal text-gray-400">(scan or enter from Guaranteed Analysis)</span></h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Protein (%)</label>
@@ -212,7 +222,7 @@ export default function DiabetesCalculatorPage() {
               <input type="number" min="0" max="99" className={sl} value={form.moisture} onChange={e => up('moisture', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 78" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Calories <span className="text-gray-400">optional — for food amount</span></label>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Calories <span className="text-gray-400">for food amount</span></label>
               <div className="flex gap-1.5">
                 <input type="number" min="0" className="flex-1 min-w-0 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white text-gray-900" value={form.calories} onChange={e => up('calories', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 350" />
                 <select className="w-20 px-2 py-3 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-violet-500 bg-white text-gray-700 shrink-0" value={form.caloriesUnit} onChange={e => up('caloriesUnit', e.target.value as CaloriesUnit)}>
@@ -231,51 +241,63 @@ export default function DiabetesCalculatorPage() {
           )}
         </div>
 
+        {/* Calculate button */}
+        <div className="space-y-3">
+          <button type="button" onClick={handleCalculate} disabled={!canCalculate}
+            className="w-full flex items-center justify-center gap-2.5 bg-violet-600 hover:bg-violet-700 active:bg-violet-800 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-base px-6 py-4 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-violet-400 focus:ring-offset-2">
+            <Calculator className="w-5 h-5" />
+            {snapshot ? 'Recalculate' : 'Calculate Diabetes Assessment'}
+          </button>
+          {!canCalculate && <p className="text-xs text-center text-gray-400">Enter your pet's weight above to calculate</p>}
+          {snapshot && isDirty && (
+            <div className="flex items-center gap-2 bg-violet-50 border border-violet-200 rounded-xl px-4 py-3 text-sm text-violet-800">
+              <RefreshCw className="w-4 h-4 flex-shrink-0" />
+              Inputs changed — click <strong className="mx-1">Recalculate</strong> to update results.
+            </div>
+          )}
+        </div>
+
         {/* Results */}
-        {hasNutrition && carbsDMB !== null && (
+        {snapshot && !isDirty && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
             <h2 className="font-semibold text-gray-800">Results for {petName}</h2>
 
             {/* Carb assessment */}
-            <div className={`rounded-xl p-5 border ${
-              (form.species === 'cat' ? catRating === 'ideal' : dogRating === 'ideal')
-                ? 'bg-green-50 border-green-200'
-                : (form.species === 'cat' ? catRating === 'good' : dogRating === 'moderate')
-                ? 'bg-yellow-50 border-yellow-200'
+            {carbsDMB !== null && (
+              <div className={`rounded-xl p-5 border ${
+                (s!.species === 'cat' ? catRating === 'ideal' : dogRating === 'ideal') ? 'bg-green-50 border-green-200'
+                : (s!.species === 'cat' ? catRating === 'good' : dogRating === 'moderate') ? 'bg-yellow-50 border-yellow-200'
                 : 'bg-red-50 border-red-200'
-            }`}>
-              <div className="flex items-start gap-3">
-                {(form.species === 'cat' ? catRating === 'ideal' : dogRating === 'ideal')
-                  ? <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
-                  : (form.species === 'cat' ? catRating === 'good' : dogRating === 'moderate')
-                  ? <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-                  : <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                }
-                <div className="flex-1">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-3xl font-bold text-gray-900">{carbsDMB.toFixed(1)}%</span>
-                    <span className="text-sm text-gray-500">carbohydrates DMB</span>
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">{carbsAF!.toFixed(1)}% as-fed (estimated)</div>
-                  <div className="mt-2 text-sm text-gray-700">
-                    {form.species === 'cat'
-                      ? catRating === 'ideal'
-                        ? '✓ Excellent for diabetic cats — under 10% carbs DMB supports diabetic remission'
-                        : catRating === 'good'
-                        ? '⚠️ Acceptable but not ideal — target under 10% DMB for best remission chances'
+              }`}>
+                <div className="flex items-start gap-3">
+                  {(s!.species === 'cat' ? catRating === 'ideal' : dogRating === 'ideal')
+                    ? <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" />
+                    : (s!.species === 'cat' ? catRating === 'good' : dogRating === 'moderate')
+                    ? <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+                    : <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
+                  }
+                  <div className="flex-1">
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-3xl font-bold text-gray-900">{carbsDMB.toFixed(1)}%</span>
+                      <span className="text-sm text-gray-500">carbohydrates DMB</span>
+                    </div>
+                    <div className="text-xs text-gray-500 mt-0.5">{carbsAF!.toFixed(1)}% as-fed (estimated)</div>
+                    <div className="mt-2 text-sm text-gray-700">
+                      {s!.species === 'cat'
+                        ? catRating === 'ideal' ? '✓ Excellent for diabetic cats — under 10% carbs DMB supports diabetic remission'
+                        : catRating === 'good' ? '⚠️ Acceptable but not ideal — target under 10% DMB for best remission chances'
                         : '✗ High carbohydrate for a diabetic cat — switch to a low-carb diet (wet food or prescription diabetic diet)'
-                      : dogRating === 'ideal'
-                      ? '✓ Good carbohydrate level for a diabetic dog'
-                      : dogRating === 'moderate'
-                      ? '⚠️ Moderate carbs — consistent feeding times are essential'
-                      : '✗ High carbohydrate — consider a lower-carb option with high fiber'
-                    }
+                        : dogRating === 'ideal' ? '✓ Good carbohydrate level for a diabetic dog'
+                        : dogRating === 'moderate' ? '⚠️ Moderate carbs — consistent feeding times are essential'
+                        : '✗ High carbohydrate — consider a lower-carb option with high fiber'
+                      }
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
+            )}
 
-            {hasWeight && (
+            {sHasWeight && (
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 <div className="bg-violet-50 rounded-xl p-4 text-center">
                   <div className="text-2xl font-bold text-violet-700">{ibwKg.toFixed(1)} kg</div>
@@ -295,7 +317,7 @@ export default function DiabetesCalculatorPage() {
               </div>
             )}
 
-            {form.species === 'cat' && (
+            {s!.species === 'cat' && (
               <div className="flex items-start gap-3 bg-violet-50 rounded-xl p-4">
                 <Info className="w-4 h-4 text-violet-600 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-violet-800 leading-relaxed">
@@ -319,12 +341,7 @@ export default function DiabetesCalculatorPage() {
           </div>
         </div>
 
-        <FoodRecommendations
-          species={form.species}
-          goals={['diabetic', 'weight-loss']}
-          onUse={handleUseFood}
-          heading="Recommended diabetic management diets"
-        />
+        <FoodRecommendations species={form.species} goals={['diabetic', 'weight-loss']} onUse={handleUseFood} heading="Recommended diabetic management diets" />
 
         <div className="flex items-center gap-2 bg-amber-50 border border-amber-200 rounded-xl p-4 text-sm text-amber-800">
           <Phone className="w-4 h-4 flex-shrink-0" />

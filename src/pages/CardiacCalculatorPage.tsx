@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Heart, CheckCircle, AlertTriangle, XCircle, Phone, Info } from 'lucide-react';
+import { Heart, CheckCircle, AlertTriangle, XCircle, Phone, Info, Calculator, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FoodRecommendations from '../components/FoodRecommendations';
 import type { RecommendedFood } from '../data/dietRecommendations';
@@ -51,8 +51,16 @@ export default function CardiacCalculatorPage() {
     petName: '', species: 'dog', weight: '', weightUnit: 'lbs', bcs: 5,
     acvimStage: 'B1', sodiumMgPer100g: '', calories: '', caloriesUnit: 'kcal/cup', isGrainFree: false, taurineAdded: true,
   });
+  const [snapshot, setSnapshot] = useState<FormState | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
-  const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  const up = (k: keyof FormState, v: unknown) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (snapshot) setIsDirty(true);
+  };
+
+  function handleCalculate() { setSnapshot({ ...form }); setIsDirty(false); }
 
   function handleScan(r: ScanResult) {
     setForm(f => ({
@@ -61,48 +69,54 @@ export default function CardiacCalculatorPage() {
           r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
           r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
     }));
+    if (snapshot) setIsDirty(true);
   }
 
   function handleUseFood(food: RecommendedFood) {
-    if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
-    else if (food.kcalPerCan) { up('calories', food.kcalPerCan); up('caloriesUnit', 'kcal/can'); }
-    else { up('calories', food.kcalPerKg); up('caloriesUnit', 'kcal/kg'); }
+    setForm(f => ({
+      ...f,
+      ...(food.kcalPerCup ? { calories: food.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
+          food.kcalPerCan ? { calories: food.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
+                            { calories: food.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit }),
+    }));
+    if (snapshot) setIsDirty(true);
     setLoadedFood(`${food.brand} ${food.name}`);
     setTimeout(() => setLoadedFood(null), 4000);
   }
 
-  const hasWeight = form.weight !== '' && Number(form.weight) > 0;
-  const calorieInput = form.calories !== '' ? Number(form.calories) : null;
-  const effectiveKcalPerKg = form.caloriesUnit === 'kcal/kg' ? calorieInput : null;
-  const hasSodium = form.sodiumMgPer100g !== '' && effectiveKcalPerKg !== null;
+  const s = snapshot;
+  const sHasWeight = s !== null && s.weight !== '' && Number(s.weight) > 0;
+  const calorieInput = s && s.calories !== '' ? Number(s.calories) : null;
+  const effectiveKcalPerKg = s && s.caloriesUnit === 'kcal/kg' ? calorieInput : null;
+  const hasSodium = s !== null && s.sodiumMgPer100g !== '' && effectiveKcalPerKg !== null;
 
-  const weightKg = hasWeight ? (form.weightUnit === 'kg' ? Number(form.weight) : Number(form.weight) / 2.205) : 0;
-  const ibwKg = weightKg > 0 ? idealKg(weightKg, form.bcs) : 0;
+  const weightKg = sHasWeight ? (s!.weightUnit === 'kg' ? Number(s!.weight) : Number(s!.weight) / 2.205) : 0;
+  const ibwKg = weightKg > 0 ? idealKg(weightKg, s!.bcs) : 0;
   const dailyKcal = ibwKg > 0 ? Math.round(rer(ibwKg) * 1.0) : 0;
 
   const sodiumPer100kcal = hasSodium
-    ? (Number(form.sodiumMgPer100g) * 1000 / effectiveKcalPerKg!)
+    ? (Number(s!.sodiumMgPer100g) * 1000 / effectiveKcalPerKg!)
     : null;
 
-  const stage = STAGE_INFO[form.acvimStage];
+  const stage = STAGE_INFO[s?.acvimStage ?? form.acvimStage];
 
   const sodiumStatus = sodiumPer100kcal !== null
     ? sodiumPer100kcal <= stage.sodiumMax ? 'ok'
     : sodiumPer100kcal <= stage.sodiumMax * 1.4 ? 'warn' : 'high'
     : null;
 
-  const dailySodium = hasWeight && hasSodium
+  const dailySodium = sHasWeight && hasSodium
     ? Math.round((dailyKcal / 100) * sodiumPer100kcal!)
     : null;
 
   let feedAmt: number | null = null;
   let feedUnit = '';
   let feedLabel = '';
-  if (calorieInput && calorieInput > 0 && hasWeight && dailyKcal > 0) {
-    if (form.caloriesUnit === 'kcal/kg') {
+  if (calorieInput && calorieInput > 0 && sHasWeight && dailyKcal > 0) {
+    if (s!.caloriesUnit === 'kcal/kg') {
       feedAmt = Math.round((dailyKcal / calorieInput) * 1000);
       feedUnit = 'g'; feedLabel = 'grams/day';
-    } else if (form.caloriesUnit === 'kcal/cup') {
+    } else if (s!.caloriesUnit === 'kcal/cup') {
       feedAmt = dailyKcal / calorieInput;
       feedUnit = 'cups'; feedLabel = 'cups/day';
     } else {
@@ -111,7 +125,8 @@ export default function CardiacCalculatorPage() {
     }
   }
 
-  const petName = form.petName.trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
+  const canCalculate = form.weight !== '' && Number(form.weight) > 0;
+  const petName = (s?.petName ?? form.petName).trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
 
   return (
     <>
@@ -237,10 +252,26 @@ export default function CardiacCalculatorPage() {
           )}
         </div>
 
+        {/* Calculate button */}
+        <div className="space-y-3">
+          <button type="button" onClick={handleCalculate} disabled={!canCalculate}
+            className="w-full flex items-center justify-center gap-2.5 bg-rose-500 hover:bg-rose-600 active:bg-rose-700 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-base px-6 py-4 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-rose-400 focus:ring-offset-2">
+            <Calculator className="w-5 h-5" />
+            {snapshot ? 'Recalculate' : 'Calculate Cardiac Assessment'}
+          </button>
+          {!canCalculate && <p className="text-xs text-center text-gray-400">Enter your pet's weight above to calculate</p>}
+          {snapshot && isDirty && (
+            <div className="flex items-center gap-2 bg-rose-50 border border-rose-200 rounded-xl px-4 py-3 text-sm text-rose-800">
+              <RefreshCw className="w-4 h-4 flex-shrink-0" />
+              Inputs changed — click <strong className="mx-1">Recalculate</strong> to update results.
+            </div>
+          )}
+        </div>
+
         {/* Results */}
-        {hasWeight && (
+        {snapshot && !isDirty && sHasWeight && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-            <h2 className="font-semibold text-gray-800">Results for {petName} — ACVIM Stage {form.acvimStage}</h2>
+            <h2 className="font-semibold text-gray-800">Results for {petName} — ACVIM Stage {s!.acvimStage}</h2>
 
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="bg-rose-50 rounded-xl p-4 text-center">
@@ -261,7 +292,7 @@ export default function CardiacCalculatorPage() {
 
             {/* Sodium stage guidance */}
             <div className="bg-rose-50 rounded-xl p-4 border border-rose-200">
-              <div className="font-semibold text-sm text-gray-800 mb-1">Sodium target — Stage {form.acvimStage}</div>
+              <div className="font-semibold text-sm text-gray-800 mb-1">Sodium target — Stage {s!.acvimStage}</div>
               <div className="text-xs text-gray-700">{stage.sodiumLabel}</div>
               {dailySodium !== null && <div className="text-xs text-gray-500 mt-1">At {dailyKcal} kcal/day, current food provides ~{dailySodium.toLocaleString()} mg sodium/day</div>}
             </div>
@@ -273,7 +304,7 @@ export default function CardiacCalculatorPage() {
                   <div>
                     <div className="font-semibold text-sm text-gray-800">{sodiumPer100kcal.toFixed(1)} mg sodium / 100 kcal</div>
                     <div className="text-xs text-gray-600 mt-0.5">
-                      Stage {form.acvimStage} target (&lt;{stage.sodiumMax} mg/100kcal):&nbsp;
+                      Stage {s!.acvimStage} target (&lt;{stage.sodiumMax} mg/100kcal):&nbsp;
                       {sodiumStatus === 'ok' ? '✓ Within target' : sodiumStatus === 'warn' ? '⚠️ Slightly above target' : '✗ Too high for this stage — consider a cardiac diet'}
                     </div>
                   </div>
@@ -282,22 +313,22 @@ export default function CardiacCalculatorPage() {
             )}
 
             {/* DCM risk */}
-            {(form.isGrainFree || !form.taurineAdded) && (
+            {(s!.isGrainFree || !s!.taurineAdded) && (
               <div className="rounded-xl p-4 border bg-orange-50 border-orange-200">
                 <div className="flex items-start gap-3">
                   <AlertTriangle className="w-5 h-5 text-orange-600 flex-shrink-0 mt-0.5" />
                   <div>
                     <div className="font-semibold text-sm text-gray-900">Potential DCM risk factors detected</div>
                     <div className="text-xs text-gray-700 mt-1 space-y-1">
-                      {form.isGrainFree && <div>• Grain-free diet with legumes: FDA is investigating association with DCM in dogs. Consider switching to a grain-inclusive WSAVA-recommended brand.</div>}
-                      {!form.taurineAdded && <div>• Taurine not listed on label: Ask your vet about taurine supplementation, especially if your dog is a Golden Retriever, Cocker Spaniel, or large breed.</div>}
+                      {s!.isGrainFree && <div>• Grain-free diet with legumes: FDA is investigating association with DCM in dogs. Consider switching to a grain-inclusive WSAVA-recommended brand.</div>}
+                      {!s!.taurineAdded && <div>• Taurine not listed on label: Ask your vet about taurine supplementation, especially if your dog is a Golden Retriever, Cocker Spaniel, or large breed.</div>}
                     </div>
                   </div>
                 </div>
               </div>
             )}
 
-            {form.acvimStage === 'A' && (
+            {s!.acvimStage === 'A' && (
               <div className="flex items-start gap-3 bg-blue-50 rounded-xl p-4">
                 <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
                 <p className="text-xs text-blue-700">Stage A dogs have no cardiac disease yet — but are a predisposed breed. Focus on omega-3s, avoiding grain-free legume diets, and annual cardiac screening (echocardiogram).</p>
