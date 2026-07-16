@@ -7,6 +7,7 @@ export interface ScanResult {
   fiber: number | null;
   moisture: number | null;
   ash: number | null;
+  phosphorus: number | null;
   kcalPerKg: number | null;
   kcalPerCup: number | null;
   kcalPerCan: number | null;
@@ -222,6 +223,7 @@ export default function LabelScanner({ onApply, accentClass = 'focus:ring-teal-4
                       ['Crude Fat', result.fat, '%'],
                       ['Crude Fiber', result.fiber, '%'],
                       ['Ash', result.ash, '%'],
+                      ['Phosphorus', result.phosphorus, '%'],
                       ['kcal/kg', result.kcalPerKg, ''],
                       ['kcal/cup', result.kcalPerCup, ''],
                       ['kcal/can', result.kcalPerCan, ''],

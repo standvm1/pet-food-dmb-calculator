@@ -23,6 +23,7 @@ interface FormState {
   phosphorus: number | '';
   calories: number | '';
   caloriesUnit: CaloriesUnit;
+  kcalPerKgFromScan: number | null;
 }
 
 const IRIS_PHOS: Record<Species, Record<IrisStage, number>> = {
@@ -62,6 +63,7 @@ export default function RenalCalculatorPage() {
   const [form, setForm] = useState<FormState>({
     petName: '', species: 'dog', weight: '', weightUnit: 'lbs', bcs: 5,
     irisStage: 2, protein: '', moisture: '', phosphorus: '', calories: '', caloriesUnit: 'kcal/cup',
+    kcalPerKgFromScan: null,
   });
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
   const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
@@ -71,25 +73,48 @@ export default function RenalCalculatorPage() {
       ...f,
       ...(r.protein !== null ? { protein: r.protein } : {}),
       ...(r.moisture !== null ? { moisture: r.moisture } : {}),
+      // phosphorus on label is % (e.g. 0.19%) → convert to mg/100g (× 1000)
+      ...(r.phosphorus !== null ? { phosphorus: Math.round(r.phosphorus * 1000) } : {}),
+      // always store kcal/kg from scan so nutrient math works even when cups is the display unit
+      kcalPerKgFromScan: r.kcalPerKg,
       ...(r.kcalPerCup !== null ? { calories: r.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
           r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
           r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
     }));
+    const calStr = r.kcalPerCup !== null ? `${r.kcalPerCup} kcal/cup`
+      : r.kcalPerCan !== null ? `${r.kcalPerCan} kcal/can`
+      : r.kcalPerKg !== null ? `${r.kcalPerKg} kcal/kg` : null;
+    const parts = [
+      r.protein !== null && 'protein',
+      r.moisture !== null && 'moisture',
+      r.phosphorus !== null && 'phosphorus',
+      calStr,
+    ].filter(Boolean) as string[];
+    if (parts.length > 0) {
+      setLoadedFood(`Scanned: ${parts.join(' · ')}`);
+      setTimeout(() => setLoadedFood(null), 6000);
+    }
   }
 
   function handleUseFood(food: RecommendedFood) {
-    if (food.kcalPerCup) { up('calories', food.kcalPerCup); up('caloriesUnit', 'kcal/cup'); }
-    else if (food.kcalPerCan) { up('calories', food.kcalPerCan); up('caloriesUnit', 'kcal/can'); }
-    else { up('calories', food.kcalPerKg); up('caloriesUnit', 'kcal/kg'); }
-    up('moisture', food.moisture);
-    up('protein', food.protein);
+    setForm(f => ({
+      ...f,
+      moisture: food.moisture,
+      protein: food.protein,
+      kcalPerKgFromScan: null,
+      ...(food.kcalPerCup ? { calories: food.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
+          food.kcalPerCan ? { calories: food.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
+                            { calories: food.kcalPerKg, caloriesUnit: 'kcal/kg' as CaloriesUnit }),
+    }));
     setLoadedFood(`${food.brand} ${food.name}`);
     setTimeout(() => setLoadedFood(null), 4000);
   }
 
   const hasInputs = form.weight !== '' && Number(form.weight) > 0;
   const calorieInput = form.calories !== '' ? Number(form.calories) : null;
-  const effectiveKcalPerKg = form.caloriesUnit === 'kcal/kg' ? calorieInput : null;
+
+  // kcal/kg for nutrient math: use typed value if unit is kcal/kg, else use auxiliary from scan
+  const effectiveKcalPerKg = form.caloriesUnit === 'kcal/kg' ? calorieInput : form.kcalPerKgFromScan;
   const hasNutrition = form.protein !== '' && form.moisture !== '' && effectiveKcalPerKg !== null;
 
   const weightKg = hasInputs
@@ -112,6 +137,14 @@ export default function RenalCalculatorPage() {
     ? gramsPerDay * (Number(form.phosphorus) / 100)
     : null;
   const phosMgPerKg = phosGrams && ibwKg > 0 ? (phosGrams * 1000) / ibwKg : null;
+
+  // DMB (dry matter basis) — works with protein + moisture alone, no kcal needed
+  const hasDMB = form.protein !== '' && form.moisture !== '' && Number(form.moisture) < 100;
+  const dmbFactor = hasDMB ? 1 / (1 - Number(form.moisture) / 100) : null;
+  const dmbProteinPct = dmbFactor !== null ? Number(form.protein) * dmbFactor : null;
+  const dmbPhosPct = dmbFactor !== null && form.phosphorus !== ''
+    ? (Number(form.phosphorus) / 10) * dmbFactor  // mg/100g → % → DMB%
+    : null;
 
   let feedAmt: number | null = null;
   let feedUnit = '';
@@ -225,7 +258,7 @@ export default function RenalCalculatorPage() {
         {/* Food label */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
           <h2 className="font-semibold text-gray-800">Current Food Label</h2>
-          <p className="text-xs text-gray-500">Enter as-fed values from the label's Guaranteed Analysis.</p>
+          <p className="text-xs text-gray-500">Enter as-fed values from the Guaranteed Analysis — or scan the label above to fill in automatically.</p>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Protein (% as-fed)</label>
@@ -239,8 +272,8 @@ export default function RenalCalculatorPage() {
               <label className="block text-xs font-medium text-gray-600 mb-1">Phosphorus (mg/100g) <span className="text-gray-400">optional</span></label>
               <input type="number" min="0" className={sl} value={form.phosphorus} onChange={e => up('phosphorus', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 190" />
             </div>
-            <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Calories <span className="text-gray-400">use kcal/kg for nutrient assessment</span></label>
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-medium text-gray-600 mb-1">Calories</label>
               <div className="flex gap-1.5">
                 <input type="number" min="0" className="flex-1 min-w-0 px-4 py-3 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-900" value={form.calories} onChange={e => up('calories', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 350" />
                 <select className="w-20 px-2 py-3 border border-gray-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white text-gray-700 shrink-0" value={form.caloriesUnit} onChange={e => up('caloriesUnit', e.target.value as CaloriesUnit)}>
@@ -249,13 +282,16 @@ export default function RenalCalculatorPage() {
                   <option value="kcal/kg">/ kg</option>
                 </select>
               </div>
+              {form.kcalPerKgFromScan && form.caloriesUnit !== 'kcal/kg' && (
+                <p className="text-xs text-blue-500 mt-1.5">Also using {form.kcalPerKgFromScan} kcal/kg (from scan) for protein &amp; phosphorus assessment</p>
+              )}
             </div>
           </div>
-          <p className="text-xs text-gray-400">Tip: Wet food kcal/kg is usually 700–1200. Dry food is usually 3000–4000.</p>
+          <p className="text-xs text-gray-400">Tip: Labels often list both kcal/cup and kcal/kg in the calorie statement. The scanner captures both automatically.</p>
           {loadedFood && (
             <div className="flex items-center gap-2 text-sm text-teal-700 bg-teal-50 rounded-xl px-4 py-2.5">
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
-              Loaded: {loadedFood}
+              {loadedFood}
             </div>
           )}
         </div>
@@ -265,6 +301,7 @@ export default function RenalCalculatorPage() {
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
             <h2 className="font-semibold text-gray-800">Results for {petName} — IRIS Stage {form.irisStage}</h2>
 
+            {/* Energy + feeding amount */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
               <div className="bg-blue-50 rounded-xl p-4 text-center">
                 <div className="text-2xl font-bold text-blue-700">{ibwKg.toFixed(1)} kg</div>
@@ -278,12 +315,57 @@ export default function RenalCalculatorPage() {
                 <div className="bg-gray-50 rounded-xl p-4 text-center">
                   <div className="text-2xl font-bold text-gray-700">{feedUnit === 'g' ? feedAmt : feedAmt.toFixed(1)} {feedUnit}</div>
                   <div className="text-xs text-gray-500 mt-0.5">{feedLabel}</div>
-                  {feedUnit !== 'g' && <div className="text-xs text-gray-400 mt-0.5">{dailyKcal} kcal/day</div>}
+                  {feedUnit !== 'g' && gramsPerDay && (
+                    <div className="text-xs text-gray-400 mt-0.5">≈ {Math.round(gramsPerDay)} g · {dailyKcal} kcal</div>
+                  )}
+                  {feedUnit !== 'g' && !gramsPerDay && (
+                    <div className="text-xs text-gray-400 mt-0.5">{dailyKcal} kcal/day</div>
+                  )}
                 </div>
               )}
             </div>
 
-            {/* Phosphorus assessment */}
+            {/* IRIS dietary targets — always visible once weight + stage set */}
+            <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
+              <div className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2.5">
+                IRIS Stage {form.irisStage} dietary targets
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <div className="text-xs text-gray-500 mb-0.5">Phosphorus</div>
+                  <div className="text-sm font-semibold text-gray-800">&lt;{phosTarget} mg/kg/day</div>
+                  <div className="text-xs text-blue-700 font-medium">&lt;{Math.round(phosTarget * ibwKg)} mg/day for {petName}</div>
+                </div>
+                <div>
+                  <div className="text-xs text-gray-500 mb-0.5">Protein</div>
+                  <div className="text-sm font-semibold text-gray-800">{proteinRange[0]}–{proteinRange[1]} g/kg/day</div>
+                  <div className="text-xs text-blue-700 font-medium">{(proteinRange[0]*ibwKg).toFixed(1)}–{(proteinRange[1]*ibwKg).toFixed(1)} g/day for {petName}</div>
+                </div>
+              </div>
+            </div>
+
+            {/* DMB — appears as soon as protein + moisture are entered */}
+            {dmbProteinPct !== null && (
+              <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
+                <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Dry Matter Basis (DMB)</div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <div className="text-xs text-gray-500 mb-0.5">Protein</div>
+                    <div className="text-lg font-bold text-gray-800">{dmbProteinPct.toFixed(1)}%</div>
+                    <div className="text-xs text-gray-400">as-fed concentration after removing water weight</div>
+                  </div>
+                  {dmbPhosPct !== null && (
+                    <div>
+                      <div className="text-xs text-gray-500 mb-0.5">Phosphorus</div>
+                      <div className="text-lg font-bold text-gray-800">{dmbPhosPct.toFixed(2)}%</div>
+                      <div className="text-xs text-gray-400">target &lt;0.5% DMB for CKD diets</div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Phosphorus intake assessment — needs kcal/kg (from entry or scan) + phosphorus mg/100g */}
             {phosMgPerKg !== null && (
               <div className={`rounded-xl p-4 border ${phosStatus === 'ok' ? 'bg-green-50 border-green-200' : phosStatus === 'warn' ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'}`}>
                 <div className="flex items-start gap-3">
@@ -296,7 +378,7 @@ export default function RenalCalculatorPage() {
               </div>
             )}
 
-            {/* Protein assessment */}
+            {/* Protein intake assessment */}
             {proteinPerKg !== null && (
               <div className={`rounded-xl p-4 border ${proteinStatus === 'ok' ? 'bg-green-50 border-green-200' : 'bg-yellow-50 border-yellow-200'}`}>
                 <div className="flex items-start gap-3">
@@ -314,10 +396,18 @@ export default function RenalCalculatorPage() {
               </div>
             )}
 
+            {/* Hints for missing data */}
             {form.phosphorus === '' && (
               <div className="flex items-start gap-3 bg-blue-50 rounded-xl p-4">
                 <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">Enter the phosphorus value from the food label to get a phosphorus intake assessment. It's often listed as "min X%" or find exact mg on the manufacturer's website.</p>
+                <p className="text-xs text-blue-700">Scan the label or enter the phosphorus value to get a phosphorus assessment. It's listed as "Phosphorus min X%" in the Guaranteed Analysis — if not shown, check the manufacturer's website.</p>
+              </div>
+            )}
+
+            {calorieInput && form.caloriesUnit !== 'kcal/kg' && !form.kcalPerKgFromScan && (
+              <div className="flex items-start gap-3 bg-amber-50 rounded-xl p-4">
+                <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
+                <p className="text-xs text-amber-700">To assess protein and phosphorus intake, the label's kcal/kg value is also needed. Scan the label — it usually lists both kcal/cup and kcal/kg in the calorie statement, and the scanner captures both at once.</p>
               </div>
             )}
 

@@ -62,6 +62,7 @@ Return ONLY a valid JSON object with exactly these fields (numbers only, no % si
   "fiber": <crude fiber maximum % as a decimal number>,
   "moisture": <moisture maximum % as a decimal number>,
   "ash": <crude ash % if explicitly listed, otherwise null>,
+  "phosphorus": <crude phosphorus minimum % if listed in guaranteed analysis, otherwise null>,
   "kcalPerKg": <metabolizable energy kcal/kg if listed in calorie statement, otherwise null>,
   "kcalPerCup": <kcal per cup (8oz) if listed, otherwise null>,
   "kcalPerCan": <kcal per can/pouch if listed, otherwise null>,
