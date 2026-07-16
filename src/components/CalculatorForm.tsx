@@ -36,6 +36,7 @@ interface CalculatorFormProps {
   onChange: (food: FoodInput) => void;
   onCalculate: () => void;
   label?: string;
+  hideCalculate?: boolean;
 }
 
 interface FieldProps {
@@ -75,7 +76,7 @@ function Field({ label, tooltip, children }: FieldProps) {
   );
 }
 
-export default function CalculatorForm({ food, onChange, onCalculate, label = 'Food' }: CalculatorFormProps) {
+export default function CalculatorForm({ food, onChange, onCalculate, label = 'Food', hideCalculate = false }: CalculatorFormProps) {
   const update = (key: keyof FoodInput, value: unknown) => {
     onChange({ ...food, [key]: value });
   };
@@ -251,18 +252,20 @@ export default function CalculatorForm({ food, onChange, onCalculate, label = 'F
 
         {/* Action buttons */}
         <div className="flex gap-3 pt-1">
-          <button
-            type="button"
-            onClick={onCalculate}
-            className="flex-1 flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-          >
-            <Calculator className="w-4 h-4" />
-            Calculate DMB
-          </button>
+          {!hideCalculate && (
+            <button
+              type="button"
+              onClick={onCalculate}
+              className="flex-1 flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold py-3 px-6 rounded-xl transition-colors focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+            >
+              <Calculator className="w-4 h-4" />
+              Calculate DMB
+            </button>
+          )}
           <button
             type="button"
             onClick={reset}
-            className="flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 font-medium py-3 px-4 rounded-xl transition-colors"
+            className={`flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-600 font-medium py-3 px-4 rounded-xl transition-colors ${hideCalculate ? 'flex-1' : ''}`}
           >
             <RotateCcw className="w-4 h-4" />
             Reset

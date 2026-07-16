@@ -118,6 +118,8 @@ export default function Home() {
     }, 100);
   };
 
+  const calcBoth = () => { calcA(); calcB(); };
+
   const showComparison = compareMode && resultA && resultB &&
     resultA.errors.length === 0 && resultB.errors.length === 0;
 
@@ -196,9 +198,22 @@ export default function Home() {
                 </div>
 
                 <div className={`grid gap-6 ${compareMode ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
-                  <CalculatorForm food={foodA} onChange={setFoodA} onCalculate={calcA} label={compareMode ? 'Food A' : 'Enter Food Label Values'} />
-                  {compareMode && <CalculatorForm food={foodB} onChange={setFoodB} onCalculate={calcB} label="Food B" />}
+                  <CalculatorForm food={foodA} onChange={setFoodA} onCalculate={calcA} label={compareMode ? 'Food A' : 'Enter Food Label Values'} hideCalculate={compareMode} />
+                  {compareMode && <CalculatorForm food={foodB} onChange={setFoodB} onCalculate={calcB} label="Food B" hideCalculate={true} />}
                 </div>
+
+                {compareMode && (
+                  <div className="max-w-2xl mx-auto w-full lg:max-w-none">
+                    <button
+                      type="button"
+                      onClick={calcBoth}
+                      className="w-full flex items-center justify-center gap-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-base py-4 px-6 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                    >
+                      <ArrowLeftRight className="w-5 h-5" />
+                      Compare Food A &amp; B
+                    </button>
+                  </div>
+                )}
 
                 {(resultA || resultB) && (
                   <div className={`grid gap-6 ${compareMode && resultA && resultB ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
