@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Fish, Info, Phone, AlertTriangle } from 'lucide-react';
+import { Fish, Info, Phone, AlertTriangle, Printer } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import LabelScanner from '../components/LabelScanner';
 
@@ -201,9 +201,10 @@ export default function Omega3CalculatorPage() {
           <span>Questions about omega-3 supplements for your pet? <a href="tel:9092226682" className="font-semibold underline">Call Atlas Veterinary (909-222-6682)</a> — we can recommend the right product and dose.</span>
         </div>
 
-        <div className="flex justify-end no-print">
-          <button type="button" onClick={() => window.print()} className="inline-flex items-center gap-2 text-sm font-medium text-gray-400 hover:text-gray-600 border border-gray-200 hover:border-gray-300 bg-white hover:bg-gray-50 px-4 py-2 rounded-xl transition-colors">
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+        <div className="no-print">
+          <button type="button" onClick={() => window.print()}
+            className="w-full flex items-center justify-center gap-2.5 text-sm font-semibold text-gray-700 hover:text-gray-900 bg-gray-50 hover:bg-gray-100 border border-gray-200 hover:border-gray-300 px-4 py-3 rounded-xl transition-colors">
+            <Printer className="w-4 h-4" />
             Save as PDF
           </button>
         </div>
