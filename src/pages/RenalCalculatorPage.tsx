@@ -86,8 +86,8 @@ export default function RenalCalculatorPage() {
       ...f,
       ...(r.protein !== null ? { protein: r.protein } : {}),
       ...(r.moisture !== null ? { moisture: r.moisture } : {}),
-      // phosphorus on label is % (e.g. 0.19%) → convert to mg/100g (× 1000)
-      ...(r.phosphorus !== null ? { phosphorus: Math.round(r.phosphorus * 1000) } : {}),
+      // phosphorus on label is % (e.g. 0.19%) — store as-is, matching the field unit
+      ...(r.phosphorus !== null ? { phosphorus: r.phosphorus } : {}),
       // always store kcal/kg from scan so nutrient math works even when cups is the display unit
       kcalPerKgFromScan: r.kcalPerKg,
       ...(r.kcalPerCup !== null ? { calories: r.kcalPerCup, caloriesUnit: 'kcal/cup' as CaloriesUnit } :
@@ -159,8 +159,8 @@ export default function RenalCalculatorPage() {
   const hasDMB = s !== null && s.protein !== '' && s.moisture !== '' && Number(s.moisture) < 100;
   const dmbFactor = hasDMB ? 1 / (1 - Number(s!.moisture) / 100) : null;
   const dmbProteinPct = dmbFactor !== null ? Number(s!.protein) * dmbFactor : null;
-  const dmbPhosPct = dmbFactor !== null && s!.phosphorus !== ''
-    ? (Number(s!.phosphorus) / 10) * dmbFactor
+  const dmbPhosPct = dmbFactor !== null && s !== null && s.phosphorus !== ''
+    ? Number(s.phosphorus) * dmbFactor  // % as-fed × dmbFactor = DMB%
     : null;
 
   let feedAmt: number | null = null;
@@ -286,8 +286,8 @@ export default function RenalCalculatorPage() {
               <input type="number" min="0" max="99" className={sl} value={form.moisture} onChange={e => up('moisture', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 78" />
             </div>
             <div>
-              <label className="block text-xs font-medium text-gray-600 mb-1">Phosphorus (mg/100g) <span className="text-gray-400">optional</span></label>
-              <input type="number" min="0" className={sl} value={form.phosphorus} onChange={e => up('phosphorus', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 190" />
+              <label className="block text-xs font-medium text-gray-600 mb-1">Phosphorus (% as-fed) <span className="text-gray-400">optional</span></label>
+              <input type="number" min="0" step="0.01" className={sl} value={form.phosphorus} onChange={e => up('phosphorus', e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g. 0.19" />
             </div>
             <div className="sm:col-span-2">
               <label className="block text-xs font-medium text-gray-600 mb-1">Calories</label>
