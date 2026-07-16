@@ -134,41 +134,85 @@ export default function LabelScanner({ onApply, accentClass = 'focus:ring-teal-4
         onChange={handleFile}
       />
 
-      {/* Initial state — compact horizontal bar */}
+      {/* Initial state */}
       {!preview && !loading && (
-        <div className="bg-gradient-to-r from-teal-600 to-teal-700 px-4 py-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-          <div className="flex items-center gap-3">
-            <div className="bg-white/20 rounded-xl p-1.5 flex-shrink-0">
-              <Camera className="w-5 h-5 text-white" />
-            </div>
-            <div>
-              <div className="text-white font-semibold text-sm leading-tight">Scan Food Label</div>
-              <div className="text-teal-200 text-xs mt-0.5 leading-snug">
-                Photo the <strong className="text-white">Guaranteed Analysis</strong> — values fill in automatically
+        <div>
+          {/* Header */}
+          <div className="bg-gradient-to-r from-teal-600 to-teal-700 px-4 py-3 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <div className="bg-white/20 rounded-xl p-1.5 flex-shrink-0">
+                <Camera className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <div className="text-white font-semibold text-sm leading-tight">Scan the Food Label</div>
+                <div className="text-teal-200 text-xs mt-0.5">AI reads the numbers for you automatically</div>
               </div>
             </div>
-          </div>
-          <div className="flex items-center gap-2 flex-shrink-0">
-            <div className="flex items-center gap-1.5 text-teal-300 text-xs hidden sm:flex">
+            <div className="flex items-center gap-1.5 text-teal-300 text-xs flex-shrink-0">
               <Sparkles className="w-3 h-3" />
-              <span>AI-powered</span>
+              <span className="hidden sm:inline">AI-powered</span>
             </div>
-            <button
-              type="button"
-              onClick={() => inputRef.current?.click()}
-              className={`inline-flex items-center gap-2 bg-white hover:bg-gray-50 text-teal-700 font-semibold text-sm px-4 py-2 rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 ${accentClass} focus:ring-offset-2 focus:ring-offset-teal-700`}
-            >
-              <Camera className="w-4 h-4" />
-              Take Photo
-            </button>
-            <button
-              type="button"
-              onClick={() => uploadRef.current?.click()}
-              className={`inline-flex items-center gap-2 bg-teal-500 hover:bg-teal-400 text-white font-semibold text-sm px-4 py-2 rounded-lg transition-colors shadow-sm focus:outline-none focus:ring-2 ${accentClass} focus:ring-offset-2 focus:ring-offset-teal-700`}
-            >
-              <Upload className="w-4 h-4" />
-              Upload Photo
-            </button>
+          </div>
+
+          {/* Visual guide */}
+          <div className="bg-white px-4 py-4 space-y-3">
+            {/* Steps */}
+            <div className="flex items-start gap-3 text-xs text-gray-500">
+              <div className="flex items-center gap-2 flex-1">
+                <span className="w-5 h-5 rounded-full bg-teal-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">1</span>
+                <span>Flip the bag over to the back</span>
+              </div>
+              <div className="text-gray-300">→</div>
+              <div className="flex items-center gap-2 flex-1">
+                <span className="w-5 h-5 rounded-full bg-teal-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">2</span>
+                <span>Find the <strong className="text-gray-700">Guaranteed Analysis</strong> box</span>
+              </div>
+              <div className="text-gray-300">→</div>
+              <div className="flex items-center gap-2 flex-1">
+                <span className="w-5 h-5 rounded-full bg-teal-600 text-white text-xs font-bold flex items-center justify-center flex-shrink-0">3</span>
+                <span>Take a close, well-lit photo of just that section</span>
+              </div>
+            </div>
+
+            {/* Example panel */}
+            <div className="flex gap-3 items-start">
+              <div className="flex-1 rounded-xl border-2 border-teal-400 bg-teal-50 p-3 text-xs">
+                <div className="font-bold text-gray-800 mb-1.5 text-xs uppercase tracking-wide">Guaranteed Analysis</div>
+                <div className="space-y-0.5 font-mono text-gray-700">
+                  <div className="flex justify-between"><span>Crude Protein (min)</span><span className="font-bold">12%</span></div>
+                  <div className="flex justify-between"><span>Crude Fat (min)</span><span className="font-bold">5%</span></div>
+                  <div className="flex justify-between"><span>Crude Fiber (max)</span><span className="font-bold">1%</span></div>
+                  <div className="flex justify-between"><span>Moisture (max)</span><span className="font-bold">78%</span></div>
+                </div>
+                <div className="mt-2 flex items-center gap-1 text-teal-700 font-semibold">
+                  <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M15 10.5a3 3 0 11-6 0 3 3 0 016 0z"/><path strokeLinecap="round" strokeLinejoin="round" d="M19.5 10.5c0 7.142-7.5 11.25-7.5 11.25S4.5 17.642 4.5 10.5a7.5 7.5 0 1115 0z"/></svg>
+                  Photograph this section
+                </div>
+              </div>
+              <div className="flex-shrink-0 text-xs text-gray-400 max-w-[110px] leading-relaxed pt-1">
+                <span className="text-red-500 font-semibold">Not</span> the front of the bag or the ingredients list — just the % table above.
+              </div>
+            </div>
+
+            {/* Buttons */}
+            <div className="flex gap-2 pt-1">
+              <button
+                type="button"
+                onClick={() => inputRef.current?.click()}
+                className={`flex-1 flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 text-white font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors shadow-sm focus:outline-none focus:ring-2 ${accentClass}`}
+              >
+                <Camera className="w-4 h-4" />
+                Take Photo
+              </button>
+              <button
+                type="button"
+                onClick={() => uploadRef.current?.click()}
+                className={`flex-1 flex items-center justify-center gap-2 bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 font-semibold text-sm px-4 py-2.5 rounded-xl transition-colors focus:outline-none focus:ring-2 ${accentClass}`}
+              >
+                <Upload className="w-4 h-4" />
+                Upload Photo
+              </button>
+            </div>
           </div>
         </div>
       )}
