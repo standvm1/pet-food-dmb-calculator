@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
-import { Droplets, AlertTriangle, CheckCircle, XCircle, Info, Phone } from 'lucide-react';
+import { Droplets, AlertTriangle, CheckCircle, XCircle, Info, Phone, Calculator, RefreshCw } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import FoodRecommendations from '../components/FoodRecommendations';
 import type { RecommendedFood } from '../data/dietRecommendations';
@@ -59,14 +59,27 @@ const TIPS = [
   { title: 'Recheck bloodwork every 3–6 months', body: 'IRIS stage can progress or occasionally improve. Reassess dietary targets with each recheck.' },
 ];
 
+const INIT: FormState = {
+  petName: '', species: 'dog', weight: '', weightUnit: 'lbs', bcs: 5,
+  irisStage: 2, protein: '', moisture: '', phosphorus: '', calories: '', caloriesUnit: 'kcal/cup',
+  kcalPerKgFromScan: null,
+};
+
 export default function RenalCalculatorPage() {
-  const [form, setForm] = useState<FormState>({
-    petName: '', species: 'dog', weight: '', weightUnit: 'lbs', bcs: 5,
-    irisStage: 2, protein: '', moisture: '', phosphorus: '', calories: '', caloriesUnit: 'kcal/cup',
-    kcalPerKgFromScan: null,
-  });
+  const [form, setForm] = useState<FormState>(INIT);
+  const [snapshot, setSnapshot] = useState<FormState | null>(null);
+  const [isDirty, setIsDirty] = useState(false);
   const [loadedFood, setLoadedFood] = useState<string | null>(null);
-  const up = (k: keyof FormState, v: unknown) => setForm(f => ({ ...f, [k]: v }));
+
+  const up = (k: keyof FormState, v: unknown) => {
+    setForm(f => ({ ...f, [k]: v }));
+    if (snapshot) setIsDirty(true);
+  };
+
+  function handleCalculate() {
+    setSnapshot({ ...form });
+    setIsDirty(false);
+  }
 
   function handleScan(r: ScanResult) {
     setForm(f => ({
@@ -81,6 +94,7 @@ export default function RenalCalculatorPage() {
           r.kcalPerCan !== null ? { calories: r.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
           r.kcalPerKg  !== null ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as CaloriesUnit } : {}),
     }));
+    if (snapshot) setIsDirty(true);
     const calStr = r.kcalPerCup !== null ? `${r.kcalPerCup} kcal/cup`
       : r.kcalPerCan !== null ? `${r.kcalPerCan} kcal/can`
       : r.kcalPerKg !== null ? `${r.kcalPerKg} kcal/kg` : null;
@@ -106,21 +120,24 @@ export default function RenalCalculatorPage() {
           food.kcalPerCan ? { calories: food.kcalPerCan, caloriesUnit: 'kcal/can' as CaloriesUnit } :
                             { calories: food.kcalPerKg, caloriesUnit: 'kcal/kg' as CaloriesUnit }),
     }));
+    if (snapshot) setIsDirty(true);
     setLoadedFood(`${food.brand} ${food.name}`);
     setTimeout(() => setLoadedFood(null), 4000);
   }
 
-  const hasInputs = form.weight !== '' && Number(form.weight) > 0;
-  const calorieInput = form.calories !== '' ? Number(form.calories) : null;
-
-  // kcal/kg for nutrient math: use typed value if unit is kcal/kg, else use auxiliary from scan
-  const effectiveKcalPerKg = form.caloriesUnit === 'kcal/kg' ? calorieInput : form.kcalPerKgFromScan;
-  const hasNutrition = form.protein !== '' && form.moisture !== '' && effectiveKcalPerKg !== null;
+  // All results computed from snapshot only
+  const s = snapshot;
+  const hasInputs = s !== null && s.weight !== '' && Number(s.weight) > 0;
+  const calorieInput = s && s.calories !== '' ? Number(s.calories) : null;
+  const effectiveKcalPerKg = s
+    ? (s.caloriesUnit === 'kcal/kg' ? calorieInput : s.kcalPerKgFromScan)
+    : null;
+  const hasNutrition = s !== null && s.protein !== '' && s.moisture !== '' && effectiveKcalPerKg !== null;
 
   const weightKg = hasInputs
-    ? (form.weightUnit === 'kg' ? Number(form.weight) : Number(form.weight) / 2.205)
+    ? (s!.weightUnit === 'kg' ? Number(s!.weight) : Number(s!.weight) / 2.205)
     : 0;
-  const ibwKg = weightKg > 0 ? idealKg(weightKg, form.bcs) : 0;
+  const ibwKg = weightKg > 0 ? idealKg(weightKg, s!.bcs) : 0;
   const rerKcal = ibwKg > 0 ? Math.round(rer(ibwKg)) : 0;
   const dailyKcal = rerKcal;
 
@@ -128,32 +145,32 @@ export default function RenalCalculatorPage() {
     ? (dailyKcal / effectiveKcalPerKg!) * 1000
     : null;
 
-  const proteinGrams = gramsPerDay && form.protein !== ''
-    ? gramsPerDay * (Number(form.protein) / 100)
+  const proteinGrams = gramsPerDay && s!.protein !== ''
+    ? gramsPerDay * (Number(s!.protein) / 100)
     : null;
   const proteinPerKg = proteinGrams && ibwKg > 0 ? proteinGrams / ibwKg : null;
 
-  const phosGrams = gramsPerDay && form.phosphorus !== ''
-    ? gramsPerDay * (Number(form.phosphorus) / 100)
+  const phosGrams = gramsPerDay && s!.phosphorus !== ''
+    ? gramsPerDay * (Number(s!.phosphorus) / 100)
     : null;
   const phosMgPerKg = phosGrams && ibwKg > 0 ? (phosGrams * 1000) / ibwKg : null;
 
-  // DMB (dry matter basis) — works with protein + moisture alone, no kcal needed
-  const hasDMB = form.protein !== '' && form.moisture !== '' && Number(form.moisture) < 100;
-  const dmbFactor = hasDMB ? 1 / (1 - Number(form.moisture) / 100) : null;
-  const dmbProteinPct = dmbFactor !== null ? Number(form.protein) * dmbFactor : null;
-  const dmbPhosPct = dmbFactor !== null && form.phosphorus !== ''
-    ? (Number(form.phosphorus) / 10) * dmbFactor  // mg/100g → % → DMB%
+  // DMB — needs only protein + moisture, no kcal
+  const hasDMB = s !== null && s.protein !== '' && s.moisture !== '' && Number(s.moisture) < 100;
+  const dmbFactor = hasDMB ? 1 / (1 - Number(s!.moisture) / 100) : null;
+  const dmbProteinPct = dmbFactor !== null ? Number(s!.protein) * dmbFactor : null;
+  const dmbPhosPct = dmbFactor !== null && s!.phosphorus !== ''
+    ? (Number(s!.phosphorus) / 10) * dmbFactor
     : null;
 
   let feedAmt: number | null = null;
   let feedUnit = '';
   let feedLabel = '';
   if (calorieInput && calorieInput > 0 && hasInputs && dailyKcal > 0) {
-    if (form.caloriesUnit === 'kcal/kg') {
+    if (s!.caloriesUnit === 'kcal/kg') {
       feedAmt = Math.round((dailyKcal / calorieInput) * 1000);
       feedUnit = 'g'; feedLabel = 'grams/day';
-    } else if (form.caloriesUnit === 'kcal/cup') {
+    } else if (s!.caloriesUnit === 'kcal/cup') {
       feedAmt = dailyKcal / calorieInput;
       feedUnit = 'cups'; feedLabel = 'cups/day';
     } else {
@@ -162,8 +179,8 @@ export default function RenalCalculatorPage() {
     }
   }
 
-  const phosTarget = IRIS_PHOS[form.species][form.irisStage];
-  const proteinRange = IRIS_PROTEIN[form.species][form.irisStage];
+  const phosTarget = s ? IRIS_PHOS[s.species][s.irisStage] : 0;
+  const proteinRange = s ? IRIS_PROTEIN[s.species][s.irisStage] : ([0, 0] as [number, number]);
 
   const phosStatus = phosMgPerKg !== null
     ? phosMgPerKg <= phosTarget ? 'ok' : phosMgPerKg <= phosTarget * 1.3 ? 'warn' : 'high'
@@ -173,7 +190,8 @@ export default function RenalCalculatorPage() {
     : proteinPerKg < proteinRange[0] ? 'low' : 'high'
     : null;
 
-  const petName = form.petName.trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
+  const petName = (s?.petName ?? form.petName).trim() || (form.species === 'dog' ? 'your dog' : 'your cat');
+  const canCalculate = form.weight !== '' && Number(form.weight) > 0;
 
   return (
     <>
@@ -242,12 +260,12 @@ export default function RenalCalculatorPage() {
           <div>
             <label className="block text-xs font-medium text-gray-600 mb-1">IRIS CKD Stage</label>
             <div className="space-y-1.5">
-              {([1,2,3,4] as IrisStage[]).map(s => (
-                <label key={s} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${form.irisStage === s ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
-                  <input type="radio" name="stage" checked={form.irisStage === s} onChange={() => up('irisStage', s)} className="accent-blue-600" />
+              {([1,2,3,4] as IrisStage[]).map(st => (
+                <label key={st} className={`flex items-center gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${form.irisStage === st ? 'border-blue-500 bg-blue-50' : 'border-gray-200 hover:border-blue-300'}`}>
+                  <input type="radio" name="stage" checked={form.irisStage === st} onChange={() => up('irisStage', st)} className="accent-blue-600" />
                   <div>
-                    <div className="text-sm font-medium text-gray-800">Stage {s}</div>
-                    <div className="text-xs text-gray-500">{STAGE_DESC[s]}</div>
+                    <div className="text-sm font-medium text-gray-800">Stage {st}</div>
+                    <div className="text-xs text-gray-500">{STAGE_DESC[st]}</div>
                   </div>
                 </label>
               ))}
@@ -257,8 +275,7 @@ export default function RenalCalculatorPage() {
 
         {/* Food label */}
         <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-4">
-          <h2 className="font-semibold text-gray-800">Current Food Label</h2>
-          <p className="text-xs text-gray-500">Enter as-fed values from the Guaranteed Analysis — or scan the label above to fill in automatically.</p>
+          <h2 className="font-semibold text-gray-800">Current Food Label <span className="text-xs font-normal text-gray-400">(optional — scan or enter manually)</span></h2>
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
             <div>
               <label className="block text-xs font-medium text-gray-600 mb-1">Protein (% as-fed)</label>
@@ -287,7 +304,7 @@ export default function RenalCalculatorPage() {
               )}
             </div>
           </div>
-          <p className="text-xs text-gray-400">Tip: Labels often list both kcal/cup and kcal/kg in the calorie statement. The scanner captures both automatically.</p>
+          <p className="text-xs text-gray-400">Tip: Labels often list both kcal/cup and kcal/kg. The scanner captures both automatically.</p>
           {loadedFood && (
             <div className="flex items-center gap-2 text-sm text-teal-700 bg-teal-50 rounded-xl px-4 py-2.5">
               <CheckCircle className="w-4 h-4 flex-shrink-0" />
@@ -296,10 +313,32 @@ export default function RenalCalculatorPage() {
           )}
         </div>
 
+        {/* Calculate button */}
+        <div className="space-y-3">
+          <button
+            type="button"
+            onClick={handleCalculate}
+            disabled={!canCalculate}
+            className="w-full flex items-center justify-center gap-2.5 bg-blue-600 hover:bg-blue-700 active:bg-blue-800 disabled:bg-gray-200 disabled:text-gray-400 text-white font-bold text-base px-6 py-4 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-blue-400 focus:ring-offset-2"
+          >
+            <Calculator className="w-5 h-5" />
+            {snapshot && isDirty ? 'Recalculate' : snapshot ? 'Recalculate' : 'Calculate Kidney Diet Plan'}
+          </button>
+          {!canCalculate && (
+            <p className="text-xs text-center text-gray-400">Enter your pet's weight above to calculate</p>
+          )}
+          {snapshot && isDirty && (
+            <div className="flex items-center gap-2 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-sm text-blue-800">
+              <RefreshCw className="w-4 h-4 flex-shrink-0" />
+              Inputs changed — click <strong className="mx-1">Recalculate</strong> to update results.
+            </div>
+          )}
+        </div>
+
         {/* Results */}
-        {hasInputs && (
+        {snapshot && !isDirty && hasInputs && (
           <div className="bg-white rounded-2xl border border-gray-100 shadow-sm p-6 space-y-5">
-            <h2 className="font-semibold text-gray-800">Results for {petName} — IRIS Stage {form.irisStage}</h2>
+            <h2 className="font-semibold text-gray-800">Results for {petName} — IRIS Stage {s!.irisStage}</h2>
 
             {/* Energy + feeding amount */}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
@@ -325,10 +364,10 @@ export default function RenalCalculatorPage() {
               )}
             </div>
 
-            {/* IRIS dietary targets — always visible once weight + stage set */}
+            {/* IRIS dietary targets */}
             <div className="bg-blue-50 rounded-xl p-4 border border-blue-100">
               <div className="text-xs font-semibold text-blue-700 uppercase tracking-wide mb-2.5">
-                IRIS Stage {form.irisStage} dietary targets
+                IRIS Stage {s!.irisStage} dietary targets
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
@@ -344,7 +383,7 @@ export default function RenalCalculatorPage() {
               </div>
             </div>
 
-            {/* DMB — appears as soon as protein + moisture are entered */}
+            {/* DMB */}
             {dmbProteinPct !== null && (
               <div className="bg-gray-50 rounded-xl p-4 border border-gray-100">
                 <div className="text-xs font-semibold text-gray-500 uppercase tracking-wide mb-2">Dry Matter Basis (DMB)</div>
@@ -352,7 +391,7 @@ export default function RenalCalculatorPage() {
                   <div>
                     <div className="text-xs text-gray-500 mb-0.5">Protein</div>
                     <div className="text-lg font-bold text-gray-800">{dmbProteinPct.toFixed(1)}%</div>
-                    <div className="text-xs text-gray-400">as-fed concentration after removing water weight</div>
+                    <div className="text-xs text-gray-400">concentration after removing water weight</div>
                   </div>
                   {dmbPhosPct !== null && (
                     <div>
@@ -365,14 +404,14 @@ export default function RenalCalculatorPage() {
               </div>
             )}
 
-            {/* Phosphorus intake assessment — needs kcal/kg (from entry or scan) + phosphorus mg/100g */}
+            {/* Phosphorus intake assessment */}
             {phosMgPerKg !== null && (
               <div className={`rounded-xl p-4 border ${phosStatus === 'ok' ? 'bg-green-50 border-green-200' : phosStatus === 'warn' ? 'bg-yellow-50 border-yellow-200' : 'bg-red-50 border-red-200'}`}>
                 <div className="flex items-start gap-3">
                   {phosStatus === 'ok' ? <CheckCircle className="w-5 h-5 text-green-600 flex-shrink-0 mt-0.5" /> : phosStatus === 'warn' ? <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" /> : <XCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />}
                   <div>
                     <div className="font-semibold text-sm text-gray-800">Phosphorus intake: {Math.round(phosMgPerKg)} mg/kg IBW/day</div>
-                    <div className="text-xs text-gray-600 mt-0.5">IRIS Stage {form.irisStage} target (&lt;{phosTarget} mg/kg/day): {phosStatus === 'ok' ? '✓ Within target' : phosStatus === 'warn' ? '⚠️ Slightly above target' : '✗ Above target — consider a renal diet or phosphate binder'}</div>
+                    <div className="text-xs text-gray-600 mt-0.5">IRIS Stage {s!.irisStage} target (&lt;{phosTarget} mg/kg/day): {phosStatus === 'ok' ? '✓ Within target' : phosStatus === 'warn' ? '⚠️ Slightly above target' : '✗ Above target — consider a renal diet or phosphate binder'}</div>
                   </div>
                 </div>
               </div>
@@ -386,7 +425,7 @@ export default function RenalCalculatorPage() {
                   <div>
                     <div className="font-semibold text-sm text-gray-800">Protein intake: {proteinPerKg.toFixed(1)} g/kg IBW/day</div>
                     <div className="text-xs text-gray-600 mt-0.5">
-                      Stage {form.irisStage} target ({proteinRange[0]}–{proteinRange[1]} g/kg/day):&nbsp;
+                      Stage {s!.irisStage} target ({proteinRange[0]}–{proteinRange[1]} g/kg/day):&nbsp;
                       {proteinStatus === 'ok' ? '✓ Within range'
                         : proteinStatus === 'low' ? '⚠️ Below target — risk of muscle loss'
                         : '⚠️ Above target — excess nitrogen load on kidneys'}
@@ -397,17 +436,17 @@ export default function RenalCalculatorPage() {
             )}
 
             {/* Hints for missing data */}
-            {form.phosphorus === '' && (
+            {s!.phosphorus === '' && (
               <div className="flex items-start gap-3 bg-blue-50 rounded-xl p-4">
                 <Info className="w-4 h-4 text-blue-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-blue-700">Scan the label or enter the phosphorus value to get a phosphorus assessment. It's listed as "Phosphorus min X%" in the Guaranteed Analysis — if not shown, check the manufacturer's website.</p>
+                <p className="text-xs text-blue-700">Scan the label or enter phosphorus (mg/100g) to get a phosphorus assessment. Listed as "Phosphorus min X%" in the Guaranteed Analysis — if not shown, check the manufacturer's website.</p>
               </div>
             )}
 
-            {calorieInput && form.caloriesUnit !== 'kcal/kg' && !form.kcalPerKgFromScan && (
+            {calorieInput && s!.caloriesUnit !== 'kcal/kg' && !s!.kcalPerKgFromScan && (
               <div className="flex items-start gap-3 bg-amber-50 rounded-xl p-4">
                 <Info className="w-4 h-4 text-amber-500 flex-shrink-0 mt-0.5" />
-                <p className="text-xs text-amber-700">To assess protein and phosphorus intake, the label's kcal/kg value is also needed. Scan the label — it usually lists both kcal/cup and kcal/kg in the calorie statement, and the scanner captures both at once.</p>
+                <p className="text-xs text-amber-700">To assess protein and phosphorus intake, the label's kcal/kg is also needed. Scan the label — it usually lists both kcal/cup and kcal/kg in the calorie statement, and the scanner captures both at once.</p>
               </div>
             )}
 
