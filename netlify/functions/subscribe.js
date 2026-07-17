@@ -14,7 +14,7 @@ exports.handler = async (event) => {
     return { statusCode: 405, headers: CORS, body: JSON.stringify({ error: 'Method not allowed' }) };
   }
 
-  const AC_API_URL = process.env.AC_API_URL;   // e.g. https://atlasveterinaryhospital.api-us1.com
+  const AC_API_URL = process.env.AC_API_URL;   // e.g. https://youraccount.api-us1.com
   const AC_API_KEY = process.env.AC_API_KEY;
   const AC_LIST_ID = process.env.AC_LIST_ID || '1';
 
@@ -36,7 +36,8 @@ exports.handler = async (event) => {
   }
 
   try {
-    const res = await fetch(`${AC_API_URL}/api/3/contacts`, {
+    // sync endpoint upserts — works for both new and existing contacts
+    const syncRes = await fetch(`${AC_API_URL}/api/3/contact/sync`, {
       method: 'POST',
       headers: {
         'Api-Token': AC_API_KEY,
@@ -50,21 +51,30 @@ exports.handler = async (event) => {
       }),
     });
 
-    const data = await res.json();
-    const contactId = data.contact?.id;
+    const syncData = await syncRes.json();
+    console.log('AC sync response:', syncRes.status, JSON.stringify(syncData).slice(0, 200));
+
+    if (!syncRes.ok) {
+      console.error('AC sync failed:', syncData);
+      return { statusCode: 502, headers: CORS, body: JSON.stringify({ error: 'Could not create contact' }) };
+    }
+
+    const contactId = syncData.contact?.id;
 
     // Add to list
-    if (contactId) {
-      await fetch(`${AC_API_URL}/api/3/contactLists`, {
+    if (contactId && AC_LIST_ID) {
+      const listRes = await fetch(`${AC_API_URL}/api/3/contactLists`, {
         method: 'POST',
         headers: {
           'Api-Token': AC_API_KEY,
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          contactList: { list: Number(AC_LIST_ID), contact: contactId, status: 1 },
+          contactList: { list: Number(AC_LIST_ID), contact: Number(contactId), status: 1 },
         }),
       });
+      const listData = await listRes.json();
+      console.log('AC list response:', listRes.status, JSON.stringify(listData).slice(0, 200));
     }
 
     return { statusCode: 200, headers: CORS, body: JSON.stringify({ ok: true }) };
