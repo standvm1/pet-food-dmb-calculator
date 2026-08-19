@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeftRight, ChevronRight } from 'lucide-react';
+import { ArrowLeftRight, ChevronRight, FlaskConical } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import CalculatorForm, { defaultFood } from '../components/CalculatorForm';
@@ -138,22 +138,37 @@ export default function Home() {
         {/* ── DMB Calculator ── */}
         <div id="calculator" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
           <div className="p-5 sm:p-6 space-y-6">
-            <div className="flex items-center justify-between">
-              <p className="text-sm text-gray-500">
+            {/* Mode switch — one food vs. side-by-side comparison */}
+            <div className="space-y-3">
+              <div className="grid grid-cols-2 gap-2 bg-gray-100 p-1.5 rounded-2xl max-w-lg mx-auto">
+                {[
+                  { mode: false, icon: <FlaskConical className="w-4 h-4" />, label: 'One Food',          desc: 'Analyze a single label' },
+                  { mode: true,  icon: <ArrowLeftRight className="w-4 h-4" />, label: 'Compare Two Foods', desc: 'See them side by side' },
+                ].map(opt => (
+                  <button
+                    key={opt.label}
+                    type="button"
+                    onClick={() => setCompareMode(opt.mode)}
+                    aria-pressed={compareMode === opt.mode}
+                    className={`flex flex-col items-center gap-0.5 px-2 sm:px-3 py-3 rounded-xl transition-all ${
+                      compareMode === opt.mode
+                        ? 'bg-teal-600 text-white shadow-md'
+                        : 'text-gray-600 hover:bg-white hover:text-teal-700'
+                    }`}
+                  >
+                    <span className="flex items-center gap-1.5 sm:gap-2 font-bold text-xs sm:text-sm leading-tight">
+                      <span className="hidden sm:inline-flex">{opt.icon}</span>{opt.label}
+                    </span>
+                    <span className={`text-[11px] sm:text-xs leading-tight ${compareMode === opt.mode ? 'text-teal-50' : 'text-gray-400'}`}>
+                      {opt.desc}
+                    </span>
+                  </button>
+                ))}
+              </div>
+              <p className="text-sm text-gray-500 text-center">
                 Enter values from the Guaranteed Analysis on the food label.{' '}
                 <Link to="/what-is-dmb" className="text-teal-600 hover:underline">What is DMB?</Link>
               </p>
-              <button
-                onClick={() => setCompareMode(!compareMode)}
-                className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors shrink-0 ml-4 ${
-                  compareMode
-                    ? 'bg-teal-600 text-white border-teal-600'
-                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                }`}
-              >
-                <ArrowLeftRight className="w-4 h-4" />
-                {compareMode ? 'Comparing A & B' : 'Compare Two Foods'}
-              </button>
             </div>
 
             {compareMode ? (
