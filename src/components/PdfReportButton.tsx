@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Download, Mail } from 'lucide-react';
+import { Download, Mail, CheckCircle } from 'lucide-react';
 import jsPDF from 'jspdf';
 import type { FoodInput, DMBResult, FeedingResult } from '../types';
 import { round1 } from '../utils/calculations';
@@ -102,8 +102,9 @@ function drawTableSection(
 
 export default function PdfReportButton({ food, result, label = 'Food', feedingResult }: PdfReportButtonProps) {
   const [loading, setLoading] = useState(false);
+  const [emailSent, setEmailSent] = useState(false);
 
-  const generatePdf = async () => {
+  const generatePdf = async (emailAfter = false) => {
     setLoading(true);
     try {
       const doc = new jsPDF({ unit: 'mm', format: 'a4' });
@@ -332,28 +333,44 @@ export default function PdfReportButton({ food, result, label = 'Food', feedingR
         addPageFooter(doc, p, totalPages);
       }
 
-      doc.save(`avh-dmb-report-${Date.now()}.pdf`);
+      const filename = `avh-dmb-report-${Date.now()}.pdf`;
+      doc.save(filename);
+
+      if (emailAfter) {
+        setTimeout(() => {
+          const subject = encodeURIComponent('Pet Food Analysis Report — Atlas Veterinary Hospital');
+          const body = encodeURIComponent(
+            `Hi,\n\nI used the Pet Food DMB Calculator at Atlas Veterinary Hospital to analyze my pet's food. I've attached the PDF report below for your review.\n\n` +
+            `(The PDF was just downloaded to your device as "${filename}" — please attach it to this email before sending.)\n\n` +
+            `Questions? Atlas Veterinary Hospital: 909-222-6682\nhttps://atlasveterinaryhospital.com`
+          );
+          window.location.href = `mailto:?subject=${subject}&body=${body}`;
+          setEmailSent(true);
+          setTimeout(() => setEmailSent(false), 5000);
+        }, 600);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="flex flex-wrap gap-2">
+    <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
       <button
-        onClick={generatePdf}
+        onClick={() => generatePdf(false)}
         disabled={loading}
-        className="flex items-center gap-2 bg-white border border-gray-200 hover:border-teal-300 hover:bg-teal-50 text-gray-700 hover:text-teal-700 font-medium px-4 py-2 rounded-xl text-sm transition-colors disabled:opacity-60"
+        className="flex items-center justify-center gap-2 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
       >
         <Download className="w-4 h-4" />
         {loading ? 'Generating…' : 'Download PDF Report'}
       </button>
       <button
-        onClick={() => alert('Download the PDF report and attach it to an email to your veterinarian, or bring it to your appointment at Atlas Veterinary Hospital (909-222-6682).')}
-        className="flex items-center gap-2 bg-white border border-gray-200 hover:border-teal-300 hover:bg-teal-50 text-gray-700 hover:text-teal-700 font-medium px-4 py-2 rounded-xl text-sm transition-colors"
+        onClick={() => generatePdf(true)}
+        disabled={loading}
+        className="flex items-center justify-center gap-2 bg-white border border-teal-300 hover:bg-teal-50 text-teal-700 hover:text-teal-800 font-semibold px-5 py-2.5 rounded-xl text-sm transition-colors disabled:opacity-60 focus:outline-none focus:ring-2 focus:ring-teal-400 focus:ring-offset-2"
       >
-        <Mail className="w-4 h-4" />
-        Email to My Vet
+        {emailSent ? <CheckCircle className="w-4 h-4 text-green-600" /> : <Mail className="w-4 h-4" />}
+        {emailSent ? 'Email app opened — attach the PDF!' : 'Email to My Vet'}
       </button>
     </div>
   );

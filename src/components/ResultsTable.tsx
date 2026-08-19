@@ -10,6 +10,8 @@ interface ResultsTableProps {
   result: DMBResult;
   food: FoodInput;
   label?: string;
+  /** Hide the single-food PDF button (compare mode uses the combined comparison PDF instead). */
+  hidePdf?: boolean;
 }
 
 interface Row {
@@ -20,7 +22,7 @@ interface Row {
   highlight?: boolean;
 }
 
-export default function ResultsTable({ result, food, label = 'Results' }: ResultsTableProps) {
+export default function ResultsTable({ result, food, label = 'Results', hidePdf }: ResultsTableProps) {
   const feedingResult = calculateFeeding(food);
 
   const rows: Row[] = [
@@ -191,7 +193,7 @@ export default function ResultsTable({ result, food, label = 'Results' }: Result
       )}
 
       {/* PDF download */}
-      {result.errors.length === 0 && (
+      {result.errors.length === 0 && !hidePdf && (
         <PdfReportButton food={food} result={result} label={label} feedingResult={feedingResult} />
       )}
     </div>

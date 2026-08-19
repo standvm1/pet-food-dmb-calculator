@@ -1,30 +1,17 @@
 import { useState } from 'react';
 import { Mail, CheckCircle } from 'lucide-react';
 
-// ── Email provider integration ────────────────────────────────────────────────
-// Replace the body of `submitToProvider` with your actual provider's API call.
-//
-// Mailchimp example (requires a server-side proxy — Mailchimp blocks direct
-// browser POSTs due to CORS):
-//   POST /api/mailchimp-subscribe   { email, firstName }
-//
-// ConvertKit example (works directly from the browser):
-//   POST https://api.convertkit.com/v3/forms/{FORM_ID}/subscribe
-//   body: { api_key: 'YOUR_KEY', email, first_name: firstName }
-//
-// Klaviyo: POST https://a.klaviyo.com/client/subscriptions/
-// Drip: POST https://api.getdrip.com/v2/{ACCOUNT_ID}/subscribers
-// ─────────────────────────────────────────────────────────────────────────────
+
 async function submitToProvider(email: string, firstName: string): Promise<void> {
-  // TODO: Replace with real API call
-  console.log('Email capture stub:', { email, firstName });
-  await new Promise(r => setTimeout(r, 800)); // Simulate network latency
-  // Uncomment when ready:
-  // await fetch('/api/subscribe', {
-  //   method: 'POST',
-  //   headers: { 'Content-Type': 'application/json' },
-  //   body: JSON.stringify({ email, firstName }),
-  // });
+  const res = await fetch('/.netlify/functions/subscribe', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ email, firstName }),
+  });
+  const data = await res.json().catch(() => ({}));
+  if (!res.ok || data.error) {
+    throw new Error(data.error || `Server error ${res.status}`);
+  }
 }
 
 export default function EmailCapture() {

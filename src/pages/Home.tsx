@@ -1,32 +1,20 @@
 import { useState, useEffect, useRef } from 'react';
-import { ArrowLeftRight, ChevronRight, FlaskConical, Scale, TrendingDown, TrendingUp } from 'lucide-react';
+import { ArrowLeftRight, ChevronRight } from 'lucide-react';
 import { Link, useSearchParams } from 'react-router-dom';
 import { Helmet } from 'react-helmet-async';
 import CalculatorForm, { defaultFood } from '../components/CalculatorForm';
 import LabelScanner, { type ScanResult } from '../components/LabelScanner';
 import ResultsTable from '../components/ResultsTable';
 import ComparisonSummary from '../components/ComparisonSummary';
+import ComparisonPdfButton from '../components/ComparisonPdfButton';
 import Disclaimer from '../components/Disclaimer';
 import AdSlot from '../components/AdSlot';
 import EmailCapture from '../components/EmailCapture';
-import FeedingCalculatorPage from './FeedingCalculatorPage';
-import WeightLossCalculatorPage from './WeightLossCalculatorPage';
-import WeightGainCalculatorPage from './WeightGainCalculatorPage';
 import { calculateDryMatterBasis } from '../utils/calculations';
 import type { FoodInput, DMBResult } from '../types';
 
-type Tab = 'dmb' | 'feeding' | 'weight-loss' | 'weight-gain';
-
-const TABS: { id: Tab; label: string; icon: React.ReactNode; desc: string }[] = [
-  { id: 'dmb',         label: 'Food Label Comparison', icon: <FlaskConical className="w-4 h-4" />, desc: 'Compare wet vs. dry food on a level playing field' },
-  { id: 'feeding',     label: 'How Much to Feed',      icon: <Scale className="w-4 h-4" />,        desc: 'Daily portion based on weight & body condition' },
-  { id: 'weight-loss', label: 'Weight Loss Plan',      icon: <TrendingDown className="w-4 h-4" />, desc: 'Safe feeding plan for overweight pets' },
-  { id: 'weight-gain', label: 'Weight Gain Plan',      icon: <TrendingUp className="w-4 h-4" />,   desc: 'Help underweight pets reach a healthy weight' },
-];
-
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [activeTab, setActiveTab] = useState<Tab>('dmb');
   const [foodA, setFoodA] = useState<FoodInput>(defaultFood());
   const loadedRef = useRef(false);
 
@@ -49,16 +37,15 @@ export default function Home() {
       foodType: (get('foodType') as FoodInput['foodType']) ?? 'canned',
       species: (get('species') as FoodInput['species']) ?? 'dog',
     }));
-    setActiveTab('dmb');
     setSearchParams({}, { replace: true }); // clean the URL
     setTimeout(() => {
-      document.getElementById('calculator-tabs')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      document.getElementById('calculator')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
     }, 100);
   }, [searchParams, setSearchParams]);
   const [foodB, setFoodB] = useState<FoodInput>(defaultFood());
 
-  function handleScan(r: ScanResult) {
-    setFoodA(f => ({
+  function applyScan(r: ScanResult, setter: (update: (prev: FoodInput) => FoodInput) => void) {
+    setter(f => ({
       ...f,
       ...(r.protein !== null ? { protein: r.protein } : {}),
       ...(r.fat !== null ? { fat: r.fat } : {}),
@@ -70,6 +57,8 @@ export default function Home() {
           r.kcalPerKg !== null  ? { calories: r.kcalPerKg,  caloriesUnit: 'kcal/kg'  as const } : {}),
     }));
   }
+  const handleScan  = (r: ScanResult) => applyScan(r, setFoodA);
+  const handleScanB = (r: ScanResult) => applyScan(r, setFoodB);
   const [resultA, setResultA] = useState<DMBResult | null>(null);
   const [resultB, setResultB] = useState<DMBResult | null>(null);
   const [compareMode, setCompareMode] = useState(false);
@@ -146,119 +135,90 @@ export default function Home() {
           </p>
         </div>
 
-        {/* ── Tab bar ── */}
-        <div id="calculator-tabs" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
-          {/* Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-4 border-b border-gray-100">
-            {TABS.map(tab => (
+        {/* ── DMB Calculator ── */}
+        <div id="calculator" className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="p-5 sm:p-6 space-y-6">
+            <div className="flex items-center justify-between">
+              <p className="text-sm text-gray-500">
+                Enter values from the Guaranteed Analysis on the food label.{' '}
+                <Link to="/what-is-dmb" className="text-teal-600 hover:underline">What is DMB?</Link>
+              </p>
               <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={`flex flex-col items-center gap-1.5 px-3 py-4 text-center transition-all border-b-2 ${
-                  activeTab === tab.id
-                    ? 'border-teal-600 bg-teal-50/60 text-teal-700'
-                    : 'border-transparent text-gray-500 hover:bg-gray-50 hover:text-gray-700'
+                onClick={() => setCompareMode(!compareMode)}
+                className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors shrink-0 ml-4 ${
+                  compareMode
+                    ? 'bg-teal-600 text-white border-teal-600'
+                    : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
                 }`}
               >
-                <span className={`${activeTab === tab.id ? 'text-teal-600' : 'text-gray-400'}`}>
-                  {tab.icon}
-                </span>
-                <span className="text-xs font-semibold leading-tight">{tab.label}</span>
-                <span className="text-xs text-gray-400 leading-tight hidden sm:block">{tab.desc}</span>
+                <ArrowLeftRight className="w-4 h-4" />
+                {compareMode ? 'Comparing A & B' : 'Compare Two Foods'}
               </button>
-            ))}
-          </div>
+            </div>
 
-          {/* Tab content */}
-          <div className="p-5 sm:p-6">
-
-            {/* ── DMB Calculator ── */}
-            {activeTab === 'dmb' && (
-              <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                  <p className="text-sm text-gray-500">
-                    Enter values from the Guaranteed Analysis on the food label.{' '}
-                    <Link to="/what-is-dmb" className="text-teal-600 hover:underline">What is DMB?</Link>
-                  </p>
-                  <button
-                    onClick={() => setCompareMode(!compareMode)}
-                    className={`flex items-center gap-2 text-sm font-semibold px-4 py-2 rounded-xl border transition-colors shrink-0 ml-4 ${
-                      compareMode
-                        ? 'bg-teal-600 text-white border-teal-600'
-                        : 'bg-white text-gray-600 border-gray-200 hover:bg-gray-50'
-                    }`}
-                  >
-                    <ArrowLeftRight className="w-4 h-4" />
-                    {compareMode ? 'Comparing A & B' : 'Compare Two Foods'}
-                  </button>
-                </div>
-
-                <div className={`${compareMode ? '' : 'max-w-2xl mx-auto w-full'}`}>
+            {compareMode ? (
+              <div className="grid gap-6 lg:grid-cols-2">
+                <div className="space-y-4">
                   <LabelScanner onApply={handleScan} />
+                  <CalculatorForm food={foodA} onChange={setFoodA} onCalculate={calcA} label="Food A" hideCalculate={true} />
                 </div>
-
-                <div className={`grid gap-6 ${compareMode ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
-                  <CalculatorForm food={foodA} onChange={setFoodA} onCalculate={calcA} label={compareMode ? 'Food A' : 'Enter Food Label Values'} hideCalculate={compareMode} />
-                  {compareMode && <CalculatorForm food={foodB} onChange={setFoodB} onCalculate={calcB} label="Food B" hideCalculate={true} />}
+                <div className="space-y-4">
+                  <LabelScanner onApply={handleScanB} />
+                  <CalculatorForm food={foodB} onChange={setFoodB} onCalculate={calcB} label="Food B" hideCalculate={true} />
                 </div>
-
-                {compareMode && (
-                  <div className="max-w-2xl mx-auto w-full lg:max-w-none">
-                    <button
-                      type="button"
-                      onClick={calcBoth}
-                      className="w-full flex items-center justify-center gap-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-base py-4 px-6 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
-                    >
-                      <ArrowLeftRight className="w-5 h-5" />
-                      Compare Food A &amp; B
-                    </button>
-                  </div>
-                )}
-
-                {(resultA || resultB) && (
-                  <div className={`grid gap-6 ${compareMode && resultA && resultB ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
-                    {resultA && <div id="results-a"><ResultsTable result={resultA} food={foodA} label={compareMode ? 'Food A Results' : 'Results'} /></div>}
-                    {compareMode && resultB && <div id="results-b"><ResultsTable result={resultB} food={foodB} label="Food B Results" /></div>}
-                  </div>
-                )}
-
-                {showComparison && (
-                  <div className="max-w-2xl mx-auto w-full">
-                    <ComparisonSummary foodA={foodA} foodB={foodB} resultA={resultA!} resultB={resultB!} />
-                  </div>
-                )}
-
-                <Disclaimer />
+              </div>
+            ) : (
+              <div className="max-w-2xl mx-auto w-full space-y-4">
+                <LabelScanner onApply={handleScan} />
+                <CalculatorForm food={foodA} onChange={setFoodA} onCalculate={calcA} label="Enter Food Label Values" hideCalculate={false} />
               </div>
             )}
 
-            {/* ── Feeding Calculator ── */}
-            {activeTab === 'feeding' && <FeedingCalculatorPage embedded />}
+            {compareMode && (
+              <div className="max-w-2xl mx-auto w-full lg:max-w-none">
+                <button
+                  type="button"
+                  onClick={calcBoth}
+                  className="w-full flex items-center justify-center gap-2.5 bg-teal-600 hover:bg-teal-700 active:bg-teal-800 text-white font-bold text-base py-4 px-6 rounded-2xl transition-colors shadow-md focus:outline-none focus:ring-2 focus:ring-teal-500 focus:ring-offset-2"
+                >
+                  <ArrowLeftRight className="w-5 h-5" />
+                  Compare Food A &amp; B
+                </button>
+              </div>
+            )}
 
-            {/* ── Weight Loss ── */}
-            {activeTab === 'weight-loss' && <WeightLossCalculatorPage embedded />}
+            {(resultA || resultB) && (
+              <div className={`grid gap-6 ${compareMode && resultA && resultB ? 'lg:grid-cols-2' : 'max-w-2xl mx-auto w-full'}`}>
+                {resultA && <div id="results-a"><ResultsTable result={resultA} food={foodA} label={compareMode ? 'Food A Results' : 'Results'} hidePdf={!!showComparison} /></div>}
+                {compareMode && resultB && <div id="results-b"><ResultsTable result={resultB} food={foodB} label="Food B Results" hidePdf={!!showComparison} /></div>}
+              </div>
+            )}
 
-            {/* ── Weight Gain ── */}
-            {activeTab === 'weight-gain' && <WeightGainCalculatorPage embedded />}
+            {showComparison && (
+              <div className="max-w-2xl mx-auto w-full space-y-3">
+                <ComparisonSummary foodA={foodA} foodB={foodB} resultA={resultA!} resultB={resultB!} />
+                <ComparisonPdfButton foodA={foodA} foodB={foodB} resultA={resultA!} resultB={resultB!} />
+              </div>
+            )}
+
+            <Disclaimer />
           </div>
         </div>
 
-        {/* Learn more links — only on DMB tab */}
-        {activeTab === 'dmb' && (
-          <div className="flex flex-wrap justify-center gap-3">
-            {[
-              { to: '/what-is-dmb', label: 'What is Dry Matter Basis?' },
-              { to: '/how-to-compare', label: 'How to Compare Foods' },
-              { to: '/cat-protein', label: 'Protein in Cat Food' },
-              { to: '/low-fat-dog', label: 'Low-Fat Dog Food' },
-            ].map(link => (
-              <Link key={link.to} to={link.to}
-                className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-700 font-medium border border-teal-200 hover:border-teal-300 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-colors">
-                {link.label} <ChevronRight className="w-4 h-4" />
-              </Link>
-            ))}
-          </div>
-        )}
+        {/* Learn more links */}
+        <div className="flex flex-wrap justify-center gap-3">
+          {[
+            { to: '/what-is-dmb', label: 'What is Dry Matter Basis?' },
+            { to: '/how-to-compare', label: 'How to Compare Foods' },
+            { to: '/cat-protein', label: 'Protein in Cat Food' },
+            { to: '/low-fat-dog', label: 'Low-Fat Dog Food' },
+          ].map(link => (
+            <Link key={link.to} to={link.to}
+              className="flex items-center gap-1.5 text-sm text-teal-600 hover:text-teal-700 font-medium border border-teal-200 hover:border-teal-300 bg-teal-50 hover:bg-teal-100 px-4 py-2 rounded-xl transition-colors">
+              {link.label} <ChevronRight className="w-4 h-4" />
+            </Link>
+          ))}
+        </div>
 
         {/* Ad slot */}
         <AdSlot id="ad-top" size="banner" />
