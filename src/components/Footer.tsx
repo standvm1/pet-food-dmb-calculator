@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { Phone } from 'lucide-react';
+import { asset } from '../utils/urls';
 
 export default function Footer() {
   return (
@@ -9,7 +10,7 @@ export default function Footer() {
           {/* Brand */}
           <div>
             <div className="flex items-center gap-3 mb-3">
-              <img src="/avh-logo.png" alt="Atlas Veterinary Hospital" className="w-12 h-12 object-contain flex-shrink-0" />
+              <img src={asset('avh-logo.png')} alt="Atlas Veterinary Hospital" className="w-12 h-12 object-contain flex-shrink-0" />
               <div>
                 <div className="font-bold text-gray-900 text-sm leading-tight">Atlas Veterinary Hospital</div>
                 <div className="text-xs text-gray-500">Pet Food DMB Calculator</div>

@@ -22,11 +22,12 @@ import UrinaryCalculatorPage from './pages/UrinaryCalculatorPage';
 import Omega3CalculatorPage from './pages/Omega3CalculatorPage';
 import EliminationDietPage from './pages/EliminationDietPage';
 import ContactPage from './pages/ContactPage';
+import NotFound from './pages/NotFound';
 
 export default function App() {
   return (
     <HelmetProvider>
-      <BrowserRouter>
+      <BrowserRouter basename={import.meta.env.BASE_URL}>
         <div className="min-h-screen flex flex-col bg-slate-50">
           <Header />
           <main className="flex-1">
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="/omega3-calculator" element={<Omega3CalculatorPage />} />
               <Route path="/elimination-diet" element={<EliminationDietPage />} />
               <Route path="/contact" element={<ContactPage />} />
+              <Route path="*" element={<NotFound />} />
             </Routes>
           </main>
           <Footer />

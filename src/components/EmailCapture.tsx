@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { Mail, CheckCircle } from 'lucide-react';
+import { fn } from '../utils/urls';
 
 
 async function submitToProvider(email: string, firstName: string): Promise<void> {
-  const res = await fetch('/.netlify/functions/subscribe', {
+  const res = await fetch(fn('subscribe'), {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ email, firstName }),

@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import Disclaimer from '../components/Disclaimer';
+import { canonical } from '../utils/urls';
 
 export default function LowFatDog() {
   return (
@@ -9,7 +10,7 @@ export default function LowFatDog() {
       <Helmet>
         <title>Low-Fat Dog Food: What Does Fat % Really Mean? | Atlas Veterinary Hospital</title>
         <meta name="description" content="Understanding fat percentage in dog food on a dry matter basis. Learn what qualifies as a low-fat dog food and when it's recommended for conditions like pancreatitis." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/low-fat-dog" />
+        <link rel="canonical" href={canonical('/low-fat-dog')} />
       </Helmet>
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium">
         <ArrowLeft className="w-4 h-4" /> Back to Calculator

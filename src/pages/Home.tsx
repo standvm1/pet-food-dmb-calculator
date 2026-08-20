@@ -12,6 +12,7 @@ import AdSlot from '../components/AdSlot';
 import EmailCapture from '../components/EmailCapture';
 import { calculateDryMatterBasis } from '../utils/calculations';
 import type { FoodInput, DMBResult } from '../types';
+import { canonical } from '../utils/urls';
 
 export default function Home() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -117,7 +118,7 @@ export default function Home() {
       <Helmet>
         <title>Pet Food Dry Matter Basis Calculator | Atlas Veterinary Hospital</title>
         <meta name="description" content="Free pet food dry matter basis (DMB) calculator for dogs and cats. Compare wet vs dry food, get personalized feeding recommendations, and download a PDF report for your vet." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/" />
+        <link rel="canonical" href={canonical('/')} />
       </Helmet>
 
       <div className="max-w-6xl mx-auto px-4 sm:px-6 py-8 space-y-10">

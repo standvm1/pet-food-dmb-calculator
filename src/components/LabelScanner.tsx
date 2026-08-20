@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { Camera, Upload, CheckCircle, AlertTriangle, RotateCcw, X, Loader2, Sparkles } from 'lucide-react';
+import { fn } from '../utils/urls';
 
 export interface ScanResult {
   protein: number | null;
@@ -72,7 +73,7 @@ export default function LabelScanner({ onApply, accentClass = 'focus:ring-teal-4
 
     try {
       const { base64, mediaType } = await compressImage(file);
-      const res = await fetch('/.netlify/functions/label-scan', {
+      const res = await fetch(fn('label-scan'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ image: base64, mediaType }),

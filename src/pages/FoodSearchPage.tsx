@@ -4,6 +4,7 @@ import { Helmet } from 'react-helmet-async';
 import FoodSearch from '../components/FoodSearch';
 import AdSlot from '../components/AdSlot';
 import Disclaimer from '../components/Disclaimer';
+import { canonical } from '../utils/urls';
 
 export default function FoodSearchPage() {
   return (
@@ -11,7 +12,7 @@ export default function FoodSearchPage() {
       <Helmet>
         <title>Pet Food Database & Search | Atlas Veterinary Hospital</title>
         <meta name="description" content="Browse and filter our pet food database by species, food type, and diet goal. See dry matter basis values for popular dog and cat foods." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/food-search" />
+        <link rel="canonical" href={canonical('/food-search')} />
       </Helmet>
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium">
         <ArrowLeft className="w-4 h-4" /> Back to Calculator

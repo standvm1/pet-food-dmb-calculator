@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import Disclaimer from '../components/Disclaimer';
+import { canonical } from '../utils/urls';
 
 export default function KidneyDiet() {
   return (
@@ -9,7 +10,7 @@ export default function KidneyDiet() {
       <Helmet>
         <title>Kidney Diet for Dogs & Cats: What to Look for on the Label | Atlas Veterinary Hospital</title>
         <meta name="description" content="Learn what makes a renal diet different, what nutrients matter most in kidney disease, and how to evaluate pet food labels for dogs and cats with CKD." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/kidney-diet" />
+        <link rel="canonical" href={canonical('/kidney-diet')} />
       </Helmet>
 
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium">

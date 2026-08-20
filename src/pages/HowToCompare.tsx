@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen, ArrowRight } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import Disclaimer from '../components/Disclaimer';
+import { canonical } from '../utils/urls';
 
 const steps = [
   {
@@ -32,7 +33,7 @@ export default function HowToCompare() {
       <Helmet>
         <title>How to Compare Wet and Dry Pet Food | Atlas Veterinary Hospital</title>
         <meta name="description" content="Step-by-step guide to comparing wet and dry pet food using dry matter basis. Learn how to read a pet food label and convert as-fed values to dry matter basis." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/how-to-compare" />
+        <link rel="canonical" href={canonical('/how-to-compare')} />
       </Helmet>
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium">
         <ArrowLeft className="w-4 h-4" /> Back to Calculator

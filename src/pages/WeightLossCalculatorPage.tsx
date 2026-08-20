@@ -8,6 +8,7 @@ import LabelScanner, { type ScanResult } from '../components/LabelScanner';
 import { calculateFeeding } from '../utils/calculations';
 import type { FoodInput, ActivityLevel, LifeStage, CaloriesUnit } from '../types';
 import type { RecommendedFood } from '../data/dietRecommendations';
+import { canonical } from '../utils/urls';
 
 type FeedUnit = 'cups' | 'cans' | 'grams';
 
@@ -164,7 +165,7 @@ export default function WeightLossCalculatorPage({ embedded }: Props = {}) {
         <Helmet>
           <title>Pet Weight Loss Calculator — Safe Dog & Cat Diet Plan | Atlas Veterinary Hospital</title>
           <meta name="description" content="Is your dog or cat overweight? Use our free pet weight loss calculator to get a safe daily feeding plan based on your pet's body condition score and weight." />
-          <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/weight-loss-calculator" />
+          <link rel="canonical" href={canonical('/weight-loss-calculator')} />
         </Helmet>
       )}
 

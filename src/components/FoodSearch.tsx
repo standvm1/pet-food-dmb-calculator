@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Search, X, Loader2, AlertCircle, ExternalLink, ShoppingCart } from 'lucide-react';
+import { fn } from '../utils/urls';
 
 interface FoodResult {
   id: string;
@@ -99,7 +100,7 @@ export default function FoodSearch() {
 
     try {
       const res  = await fetch(
-        `/.netlify/functions/food-search?q=${encodeURIComponent(q.trim())}`,
+        `${fn('food-search')}?q=${encodeURIComponent(q.trim())}`,
         { signal: abortRef.current.signal }
       );
       const data = await res.json();

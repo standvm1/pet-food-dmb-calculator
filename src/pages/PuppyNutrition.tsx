@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import Disclaimer from '../components/Disclaimer';
+import { canonical } from '../utils/urls';
 
 export default function PuppyNutrition() {
   return (
@@ -9,7 +10,7 @@ export default function PuppyNutrition() {
       <Helmet>
         <title>Puppy & Kitten Nutrition: What to Look for in a Growth Diet | Atlas Veterinary Hospital</title>
         <meta name="description" content="Everything you need to know about feeding puppies and kittens — protein levels, calcium-to-phosphorus ratios, caloric density, and when to switch to adult food." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/puppy-nutrition" />
+        <link rel="canonical" href={canonical('/puppy-nutrition')} />
       </Helmet>
 
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium">

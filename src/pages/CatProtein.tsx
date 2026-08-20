@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import Disclaimer from '../components/Disclaimer';
+import { canonical } from '../utils/urls';
 
 export default function CatProtein() {
   return (
@@ -9,7 +10,7 @@ export default function CatProtein() {
       <Helmet>
         <title>Protein in Cat Food: As-Fed vs Dry Matter Basis | Atlas Veterinary Hospital</title>
         <meta name="description" content="Why does cat food protein percentage look different on a dry matter basis? Learn how to accurately compare protein levels in wet and dry cat food using DMB calculations." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/cat-protein" />
+        <link rel="canonical" href={canonical('/cat-protein')} />
       </Helmet>
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium">
         <ArrowLeft className="w-4 h-4" /> Back to Calculator

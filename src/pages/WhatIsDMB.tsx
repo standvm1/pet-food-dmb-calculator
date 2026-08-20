@@ -2,6 +2,7 @@ import { Link } from 'react-router-dom';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import Disclaimer from '../components/Disclaimer';
+import { canonical } from '../utils/urls';
 
 export default function WhatIsDMB() {
   return (
@@ -9,7 +10,7 @@ export default function WhatIsDMB() {
       <Helmet>
         <title>What is Dry Matter Basis? | Pet Food Nutrition Guide | Atlas Veterinary Hospital</title>
         <meta name="description" content="Learn what dry matter basis (DMB) means in pet food nutrition, why it matters when comparing wet and dry foods, and how to calculate it for your dog or cat." />
-        <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/what-is-dmb" />
+        <link rel="canonical" href={canonical('/what-is-dmb')} />
       </Helmet>
       <Link to="/" className="inline-flex items-center gap-2 text-sm text-teal-600 hover:text-teal-700 font-medium">
         <ArrowLeft className="w-4 h-4" /> Back to Calculator

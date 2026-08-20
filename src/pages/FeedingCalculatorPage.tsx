@@ -8,6 +8,7 @@ import LabelScanner, { type ScanResult } from '../components/LabelScanner';
 import { calculateFeeding } from '../utils/calculations';
 import type { FoodInput, ActivityLevel, LifeStage, CaloriesUnit } from '../types';
 import type { RecommendedFood, DietGoal } from '../data/dietRecommendations';
+import { canonical } from '../utils/urls';
 
 interface FormState {
   petName: string;
@@ -130,7 +131,7 @@ export default function FeedingCalculatorPage({ embedded }: Props = {}) {
         <Helmet>
           <title>Pet Feeding Calculator — How Much Should I Feed My Pet? | Atlas Veterinary Hospital</title>
           <meta name="description" content="Free pet feeding calculator for dogs and cats. Enter your pet's weight and body condition score to get personalized daily feeding recommendations from Atlas Veterinary Hospital." />
-          <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/feeding-calculator" />
+          <link rel="canonical" href={canonical('/feeding-calculator')} />
         </Helmet>
       )}
 

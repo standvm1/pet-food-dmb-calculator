@@ -3,8 +3,28 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 import { VitePWA } from 'vite-plugin-pwa'
 
+// Where the app is served from. '/' today; set BASE_PATH=/PetFoodCalc/ in the
+// Netlify environment when it moves behind app.atlasvetapps.com. Router
+// basename, asset URLs, function calls and the PWA manifest all derive from
+// this, so the move is a one-variable change.
+const base = process.env.BASE_PATH || '/'
+
+// Same default as src/utils/urls.ts. Social scrapers don't run JS, so the
+// Open Graph tags have to be absolute in index.html itself — this fills the
+// %SITE_ORIGIN% / %BASE% tokens at build time.
+const siteOrigin = (process.env.VITE_SITE_URL || 'https://pet-food-calc.netlify.app').replace(/\/$/, '')
+
+const ICON_SIZES = [72, 96, 128, 144, 152, 192, 384, 512] as const
+const MASKABLE = new Set([192, 512])
+
 export default defineConfig({
+  base,
   plugins: [
+    {
+      name: 'absolute-og-urls',
+      transformIndexHtml: (html: string) =>
+        html.replace(/%SITE_ORIGIN%/g, siteOrigin).replace(/%BASE%/g, base),
+    },
     tailwindcss(),
     react(),
     VitePWA({
@@ -18,18 +38,14 @@ export default defineConfig({
         background_color: '#f8fafc',
         display: 'standalone',
         orientation: 'portrait',
-        start_url: '/',
-        scope: '/',
-        icons: [
-          { src: '/icon-72.png',  sizes: '72x72',   type: 'image/png' },
-          { src: '/icon-96.png',  sizes: '96x96',   type: 'image/png' },
-          { src: '/icon-128.png', sizes: '128x128', type: 'image/png' },
-          { src: '/icon-144.png', sizes: '144x144', type: 'image/png' },
-          { src: '/icon-152.png', sizes: '152x152', type: 'image/png' },
-          { src: '/icon-192.png', sizes: '192x192', type: 'image/png', purpose: 'any maskable' },
-          { src: '/icon-384.png', sizes: '384x384', type: 'image/png' },
-          { src: '/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
-        ],
+        start_url: base,
+        scope: base,
+        icons: ICON_SIZES.map(size => ({
+          src: `${base}icon-${size}.png`,
+          sizes: `${size}x${size}`,
+          type: 'image/png',
+          ...(MASKABLE.has(size) ? { purpose: 'any maskable' } : {}),
+        })),
       },
       workbox: {
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],

@@ -8,6 +8,7 @@ import LabelScanner, { type ScanResult } from '../components/LabelScanner';
 import { calculateFeeding } from '../utils/calculations';
 import type { FoodInput, ActivityLevel, LifeStage, CaloriesUnit } from '../types';
 import type { RecommendedFood } from '../data/dietRecommendations';
+import { canonical } from '../utils/urls';
 
 type FeedUnit = 'cups' | 'cans' | 'grams';
 
@@ -169,7 +170,7 @@ export default function WeightGainCalculatorPage({ embedded }: Props = {}) {
         <Helmet>
           <title>Pet Weight Gain Calculator — Underweight Dog & Cat Feeding Guide | Atlas Veterinary Hospital</title>
           <meta name="description" content="Is your dog or cat underweight? Use our free weight gain calculator to get a safe feeding plan to help your pet reach a healthy body condition." />
-          <link rel="canonical" href="https://petfooddmb.atlasveterinaryhospital.com/weight-gain-calculator" />
+          <link rel="canonical" href={canonical('/weight-gain-calculator')} />
         </Helmet>
       )}
 

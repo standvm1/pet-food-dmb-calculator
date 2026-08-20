@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Helmet } from 'react-helmet-async';
 import { MapPin, Phone, Mail, Clock, CheckCircle, Loader2, Send } from 'lucide-react';
+import { fn } from '../utils/urls';
 
 const CLINIC = {
   name: 'Atlas Veterinary Hospital',
@@ -28,7 +29,7 @@ export default function ContactPage() {
     if (!form.email) return;
     setStatus('loading');
     try {
-      const res = await fetch('/.netlify/functions/subscribe', {
+      const res = await fetch(fn('subscribe'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ email: form.email, firstName: form.firstName }),

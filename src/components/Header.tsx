@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Menu, X, BookOpen, ChevronDown } from 'lucide-react';
+import { asset } from '../utils/urls';
 
 const calcLinks = [
   { to: '/feeding-calculator', label: '🍽️ How Much Should I Feed?', desc: 'General daily feeding amounts' },
@@ -42,7 +43,7 @@ export default function Header() {
           {/* Logo */}
           <Link to="/" className="flex items-center gap-2.5 group">
             <img
-              src="/avh-logo.png"
+              src={asset('avh-logo.png')}
               alt="Atlas Veterinary Hospital"
               className="w-10 h-10 object-contain flex-shrink-0"
             />
